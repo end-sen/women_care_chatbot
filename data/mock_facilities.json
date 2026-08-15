@@ -1,0 +1,98 @@
+[
+  {
+    "id": "fac-01",
+    "name": "Amani Maternal & Child Wellness Hub",
+    "type": "antenatal",
+    "type_label": "Antenatal & General Maternal Care",
+    "distance": "1.2 km",
+    "address": "45 Solar Avenue, District 3, Wakanda Utopia Zone",
+    "phone": "+254 700 112 334",
+    "hours": "24/7 Emergency & Outpatient 08:00 - 20:00",
+    "emergency_services": true,
+    "description": "Specialized high-risk and routine antenatal care, fetal monitoring, and holistic midwife support."
+  },
+  {
+    "id": "fac-02",
+    "name": "Sankofa Family Planning & Reproductive Center",
+    "type": "family_planning",
+    "type_label": "Family Planning & Contraceptive Health",
+    "distance": "2.8 km",
+    "address": "12 Harmony Boulevard, Central Plaza",
+    "phone": "+254 711 223 445",
+    "hours": "Mon-Sat 08:30 - 18:00",
+    "emergency_services": false,
+    "description": "Confidential family planning counseling, long-acting contraception, reproductive rights guidance, and post-care support."
+  },
+  {
+    "id": "fac-03",
+    "name": "KiliCare Regional Hospital",
+    "type": "general",
+    "type_label": "General Hospital & Emergency Care",
+    "distance": "3.5 km",
+    "address": "88 Horizon Expressway, North Sector",
+    "phone": "+254 722 334 556",
+    "hours": "24/7 All Departments",
+    "emergency_services": true,
+    "description": "Full-capacity emergency surgical unit, blood bank, neonatal intensive care (NICU), and comprehensive obstetric services."
+  },
+  {
+    "id": "fac-04",
+    "name": "Asante Midwifery & Community Clinic",
+    "type": "antenatal",
+    "type_label": "Antenatal & Community Midwifery",
+    "distance": "4.1 km",
+    "address": "104 Baobab Grove, South District",
+    "phone": "+254 733 445 667",
+    "hours": "Mon-Fri 08:00 - 17:00, Sat 09:00 - 14:00",
+    "emergency_services": true,
+    "description": "Community-first maternity care, birth planning, prenatal exercise, and nutritional guidance."
+  },
+  {
+    "id": "fac-05",
+    "name": "Zuri Reproductive Choice & Health Clinic",
+    "type": "family_planning",
+    "type_label": "Family Planning & Medical Consultation",
+    "distance": "5.0 km",
+    "address": "21 Emerald Heights Way, West Ridge",
+    "phone": "+254 744 556 778",
+    "hours": "Mon-Fri 09:00 - 19:00",
+    "emergency_services": false,
+    "description": "Empathetic, non-judgmental reproductive options counseling, licensed clinical procedures, and family planning."
+  },
+  {
+    "id": "fac-06",
+    "name": "Nile Breeze Urgent Maternity Care",
+    "type": "antenatal",
+    "type_label": "Urgent Obstetric Care",
+    "distance": "1.8 km",
+    "address": "77 Riverfront Promenade, District 1",
+    "phone": "+254 755 667 889",
+    "hours": "24/7 Immediate Triage",
+    "emergency_services": true,
+    "description": "Rapid response triage for acute pregnancy symptoms, bleeding, hypertension, and abdominal pain."
+  },
+  {
+    "id": "fac-07",
+    "name": "Serengeti Youth & Women's Health Haven",
+    "type": "family_planning",
+    "type_label": "Contraception & Youth Reproductive Care",
+    "distance": "6.2 km",
+    "address": "33 Innovation Drive, Tech Quarter",
+    "phone": "+254 766 778 990",
+    "hours": "Mon-Sat 09:00 - 17:00",
+    "emergency_services": false,
+    "description": "Youth-friendly, private health education, emergency contraception, and comprehensive STI/contraception services."
+  },
+  {
+    "id": "fac-08",
+    "name": "Ubuntu Apex Medical Complex",
+    "type": "general",
+    "type_label": "Tertiary General & Obstetric Center",
+    "distance": "7.5 km",
+    "address": "500 Utopia Ring Road, Metropolitan Hub",
+    "phone": "+254 777 889 001",
+    "hours": "24/7 Comprehensive Care",
+    "emergency_services": true,
+    "description": "State-of-the-art maternal health research, ultrasound imaging, maternal-fetal medicine specialists, and delivery suites."
+  }
+]
