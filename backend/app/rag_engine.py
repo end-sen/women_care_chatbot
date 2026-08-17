@@ -4,38 +4,52 @@ from typing import List, Dict, Any, Tuple
 import numpy as np
 
 try:
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.metrics.pairwise import cosine_similarity
+    HAS_SKLEARN = True
+except ImportError:
+    HAS_SKLEARN = False
+
+try:
     from sentence_transformers import SentenceTransformer
     HAS_ST = True
-except ImportError:
+except Exception:
     HAS_ST = False
 
 try:
     import chromadb
     HAS_CHROMA = True
-except ImportError:
+except Exception:
     HAS_CHROMA = False
 
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data", "sample_who_docs"))
 CHROMA_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "rag", "chroma_db"))
 
+# Detect low memory environments (like Render Free Tier with 512MB RAM limit)
+IS_LOW_MEMORY = os.getenv("RENDER") is not None or os.getenv("LOW_MEMORY") == "1"
+
 class LocalRAGEngine:
     def __init__(self):
         self.documents: List[Dict[str, Any]] = []
-        self.doc_embeddings: List[np.ndarray] = []
+        self.doc_embeddings = None
         self.model = None
+        self.tfidf_vectorizer = None
         self.chroma_client = None
         self.collection = None
         self.initialized = False
 
     def initialize(self, force_reindex: bool = False):
-        """Load documents and set up embeddings & vector index."""
+        """Load WHO medical documents and set up embeddings & vector index."""
         if self.initialized and not force_reindex:
             return
 
         print(f"[RAG Engine] Loading WHO documents from {DATA_DIR}...")
         self._load_documents()
 
-        if HAS_ST and HAS_CHROMA:
+        # In low-memory environments (Render 512MB RAM), use ultra-fast TF-IDF (<20MB RAM)
+        if IS_LOW_MEMORY or not (HAS_ST and HAS_CHROMA):
+            self._initialize_tfidf()
+        else:
             try:
                 print("[RAG Engine] Initializing SentenceTransformer ('all-MiniLM-L6-v2')...")
                 self.model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -77,16 +91,25 @@ class LocalRAGEngine:
                         self.collection.add(ids=ids, documents=texts, embeddings=embeddings, metadatas=metadatas)
                     print(f"[RAG Engine] Successfully indexed {len(texts)} chunks in ChromaDB!")
 
-                # Store embeddings in memory for fast exact cosine similarity checks
                 texts = [doc["text"] for doc in self.documents]
                 encoded = self.model.encode(texts, normalize_embeddings=True)
                 self.doc_embeddings = [np.array(e, dtype=np.float32) for e in encoded]
-
             except Exception as e:
-                print(f"[RAG Engine] ChromaDB/SentenceTransformer init warning: {e}.")
-                self.model = None
+                print(f"[RAG Engine] SentenceTransformer OOM/Init warning: {e}. Switching to lightweight TF-IDF...")
+                self._initialize_tfidf()
 
         self.initialized = True
+
+    def _initialize_tfidf(self):
+        """Ultra-fast TF-IDF vector engine requiring <20MB RAM for Render Free Tier."""
+        print("[RAG Engine] Initializing lightweight TF-IDF vector engine (<20MB RAM)...")
+        if HAS_SKLEARN:
+            texts = [doc["text"] for doc in self.documents]
+            self.tfidf_vectorizer = TfidfVectorizer(stop_words='english', ngram_range=(1, 2))
+            self.doc_embeddings = self.tfidf_vectorizer.fit_transform(texts)
+            print(f"[RAG Engine] Successfully indexed {len(texts)} WHO document passages with TF-IDF engine!")
+        else:
+            print("[RAG Engine] Warning: scikit-learn not available. Falling back to keyword matching.")
 
     def _load_documents(self):
         """Chunk WHO text files into semantic passages and assign topic_tag metadata."""
@@ -148,16 +171,14 @@ class LocalRAGEngine:
         history: List[Dict[str, str]] = None
     ) -> Tuple[List[Dict[str, Any]], List[str]]:
         """
-        Retrieves top_k chunks matching query with threshold >= 0.60.
-        Uses soft topic_tag boosting (1.35x boost for preferred tags) and conversation history for follow-up query expansion.
-        Logs all chunk scores to console for debugging.
+        Retrieves top_k chunks matching query with similarity thresholding and soft topic_tag boosting.
         """
         if not self.initialized:
             self.initialize()
 
         query_lower = user_query.lower()
 
-        # 1. Handle Follow-up Context Expansion using History
+        # Handle Follow-up Context Expansion using History
         search_query = user_query
         followup_keywords = ["that", "it", "why", "this", "more", "tell me", "dangerous", "happen", "long", "lasts"]
         is_followup = any(kw in query_lower.split() for kw in followup_keywords)
@@ -167,9 +188,8 @@ class LocalRAGEngine:
             if recent_user_turns:
                 last_topic = recent_user_turns[-1]
                 search_query = f"{last_topic} - {user_query}"
-                print(f"[RAG Engine Debug] Recognized Follow-Up Query Expansion: '{search_query}'")
 
-        # 2. Preferred Topic Tags for Soft Boost
+        # Preferred Topic Tags for Soft Boost
         preferred_tags = []
         if any(kw in query_lower for kw in ["nauseous", "nausea", "morning sickness", "vomiting", "food", "diet", "vitamin", "folic acid", "iron", "calcium", "eat", "drink", "nutrition", "trimester"]):
             preferred_tags.append("nutrition")
@@ -187,52 +207,25 @@ class LocalRAGEngine:
         elif branch == "whats_right_for_me" and not preferred_tags:
             preferred_tags = ["options", "contraception"]
 
-        print(f"\n[RAG Engine Debug] User Query: '{user_query}' | Search String: '{search_query}' | Branch: '{branch}'")
-        print(f"[RAG Engine Debug] Preferred Soft Boost Tags: {preferred_tags}")
-
         retrieved_chunks = []
         unique_sources = set()
 
-        if self.model and self.doc_embeddings:
-            expanded_query = f"WHO maternal health medical guidelines regarding {search_query}: {search_query}"
-            q_emb = self.model.encode([expanded_query], normalize_embeddings=True)[0]
-            q_emb = np.array(q_emb, dtype=np.float32)
+        # Case A: TF-IDF Vector Engine (Low RAM / Render Free Tier)
+        if self.tfidf_vectorizer is not None and self.doc_embeddings is not None:
+            q_vec = self.tfidf_vectorizer.transform([search_query])
+            sim_scores = cosine_similarity(q_vec, self.doc_embeddings)[0]
 
             candidates = []
             for idx, doc in enumerate(self.documents):
-                d_emb = self.doc_embeddings[idx]
-                raw_sim = float(np.dot(q_emb, d_emb))
-                
-                calibrated_sim = min(1.0, raw_sim / 0.50)
+                raw_sim = float(sim_scores[idx])
+                calibrated_sim = min(1.0, raw_sim / 0.35)
 
-                # Soft Boost: Apply 1.35x multiplier to preferred tags, 0.70x to non-preferred
-                if preferred_tags:
-                    if doc["topic_tag"] in preferred_tags:
-                        soft_boosted_sim = min(1.0, calibrated_sim * 1.35)
-                    else:
-                        soft_boosted_sim = calibrated_sim * 0.70
+                if preferred_tags and doc["topic_tag"] in preferred_tags:
+                    soft_boosted_sim = min(1.0, calibrated_sim * 1.35)
                 else:
                     soft_boosted_sim = calibrated_sim
 
-                is_retained = (soft_boosted_sim >= min_similarity) or (calibrated_sim >= min_similarity) or (raw_sim >= 0.28)
-                
-                print(
-                    f"[RAG Engine Debug] Chunk: {doc['id']} | Tag: {doc['topic_tag']} | "
-                    f"Raw: {raw_sim:.4f} | Calibrated: {calibrated_sim:.4f} | Boosted: {soft_boosted_sim:.4f} | "
-                    f"Status: {'RETAINED' if is_retained else 'DISCARDED (<0.60)'}"
-                )
-
-                if is_retained:
-                    candidates.append((soft_boosted_sim, doc))
-
-            # Fallback if no chunks passed threshold
-            if not candidates:
-                print("[RAG Engine Debug] Warning: No chunks passed threshold with soft boost. Falling back to unfiltered semantic search across full KB.")
-                for idx, doc in enumerate(self.documents):
-                    d_emb = self.doc_embeddings[idx]
-                    raw_sim = float(np.dot(q_emb, d_emb))
-                    calibrated_sim = min(1.0, raw_sim / 0.50)
-                    candidates.append((calibrated_sim, doc))
+                candidates.append((soft_boosted_sim, doc))
 
             candidates.sort(key=lambda x: x[0], reverse=True)
             top_candidates = candidates[:top_k]
@@ -246,7 +239,54 @@ class LocalRAGEngine:
                 })
                 unique_sources.add(doc["source"])
 
-            print(f"[RAG Engine Debug] Total Retained Chunks Passed to LLM: {len(retrieved_chunks)}")
+        # Case B: SentenceTransformer Engine (High RAM / Local / HF Spaces)
+        elif self.model and self.doc_embeddings:
+            expanded_query = f"WHO maternal health medical guidelines regarding {search_query}: {search_query}"
+            q_emb = self.model.encode([expanded_query], normalize_embeddings=True)[0]
+            q_emb = np.array(q_emb, dtype=np.float32)
+
+            candidates = []
+            for idx, doc in enumerate(self.documents):
+                d_emb = self.doc_embeddings[idx]
+                raw_sim = float(np.dot(q_emb, d_emb))
+                calibrated_sim = min(1.0, raw_sim / 0.50)
+
+                if preferred_tags and doc["topic_tag"] in preferred_tags:
+                    soft_boosted_sim = min(1.0, calibrated_sim * 1.35)
+                else:
+                    soft_boosted_sim = calibrated_sim * 0.70
+
+                candidates.append((soft_boosted_sim, doc))
+
+            candidates.sort(key=lambda x: x[0], reverse=True)
+            top_candidates = candidates[:top_k]
+
+            for score, doc in top_candidates:
+                retrieved_chunks.append({
+                    "text": doc["text"],
+                    "source": doc["source"],
+                    "topic_tag": doc["topic_tag"],
+                    "similarity": score
+                })
+                unique_sources.add(doc["source"])
+
+        # Case C: Fallback Keyword Search if no vector match
+        if not retrieved_chunks and self.documents:
+            words = set(query_lower.split())
+            scores = []
+            for doc in self.documents:
+                doc_text = doc["text"].lower()
+                matches = sum(1 for w in words if w in doc_text and len(w) > 3)
+                scores.append((matches, doc))
+            scores.sort(key=lambda x: x[0], reverse=True)
+            for s, doc in scores[:top_k]:
+                retrieved_chunks.append({
+                    "text": doc["text"],
+                    "source": doc["source"],
+                    "topic_tag": doc["topic_tag"],
+                    "similarity": 0.70
+                })
+                unique_sources.add(doc["source"])
 
         return retrieved_chunks, list(unique_sources)
 
