@@ -1,0 +1,8 @@
+{
+  "name": "maternitycare-app",
+  "private": true,
+  "scripts": {
+    "build": "npm run build --prefix frontend",
+    "dev": "npm run dev --prefix frontend"
+  }
+}
