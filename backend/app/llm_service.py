@@ -15,12 +15,12 @@ except Exception as e:
     groq_client = None
 
 FALLBACK_MODELS = [
-    os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
-    "llama-3.1-70b-versatile",
-    "llama3-8b-8192",
-    "llama-3.2-3b-preview",
-    "mixtral-8x7b-32768",
-    "gemma2-9b-it"
+    os.getenv("GROQ_MODEL", "groq/compound"),
+    "groq/compound-mini",
+    "qwen/qwen3.6-27b",
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+    "allam-2-7b"
 ]
 
 def call_groq_with_retry(messages: list, model: str = None, temperature: float = 0.2, max_tokens: int = 500, max_retries: int = 1) -> str:
