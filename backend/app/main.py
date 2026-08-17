@@ -52,6 +52,16 @@ class ChatResponse(BaseModel):
     action: Optional[Dict[str, Any]] = None
     support_card: Optional[Dict[str, Any]] = None
 
+@app.get("/")
+def root_status():
+    return {
+        "status": "online",
+        "app": "MaternityCare AI Chatbot API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/api/health"
+    }
+
 @app.get("/api/health")
 def health_check():
     return {"status": "ok", "app": "MaternityCare AI", "rag_initialized": rag_engine.initialized}
