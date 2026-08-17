@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://maternitycare-backend.onrender.com/api/:path*"
+      "destination": "https://women-care-chatbot.onrender.com/api/:path*"
     },
     {
       "source": "/index2.html",
