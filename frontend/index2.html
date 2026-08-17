@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Amina — Your Maternal Care Companion</title>
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --plum-dark: #3b0e47;
+    --plum-mid: #5e1554;
+    --plum-rose: #8a1c52;
+    --gold: #f5a623;
+    --gold-bright: #f7b500;
+    --paper-light: #fdf2f7;
+    --card-bg: #ffffff;
+    --magenta-btn: #be185d;
+    --magenta-btn-hover: #9d174d;
+    --line: #f3d5df;
+    --ink-dark: #2d062e;
+    --ink-muted: #884b66;
+    --font-display: 'Outfit', sans-serif;
+    --font-body: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  html, body {
+    height: 100%;
+    width: 100%;
+    font-family: var(--font-body);
+    background-color: var(--paper-light);
+    overflow-x: hidden;
+  }
+
+  .shell {
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* ================= LEFT HERO ================= */
+  .hero {
+    flex: 1.15;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(155deg, #380d40 0%, #5a1450 45%, #911d51 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 38px 44px;
+    color: #ffffff;
+  }
+
+  /* Decorative botanical leaves */
+  .decor-leaf {
+    position: absolute;
+    opacity: 0.22;
+    pointer-events: none;
+  }
+  .decor-leaf.a {
+    top: 6%;
+    right: 4%;
+    width: 140px;
+    transform: rotate(-10deg);
+  }
+  .decor-leaf.b {
+    bottom: 5%;
+    left: 2%;
+    width: 110px;
+    transform: rotate(15deg);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    z-index: 3;
+  }
+
+  .brand-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 8px 16px 8px 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .brand-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(245, 166, 35, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .brand-mark svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .brand-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 19px;
+    color: #ffffff;
+    line-height: 1.1;
+  }
+  .brand-tag {
+    font-size: 9.5px;
+    color: rgba(255, 255, 255, 0.75);
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    margin-top: 1px;
+  }
+
+  .illo-stage {
+    position: relative;
+    z-index: 2;
+    margin: 24px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .hero-img {
+    width: 100%;
+    max-width: 520px;
+    max-height: 360px;
+    object-fit: cover;
+    border-radius: 24px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .hero-copy {
+    position: relative;
+    z-index: 3;
+    max-width: 480px;
+    margin-top: 10px;
+  }
+
+  .hero-copy h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(32px, 3.8vw, 44px);
+    line-height: 1.15;
+    margin-bottom: 14px;
+    color: #ffffff;
+  }
+
+  .hero-copy h1 em {
+    font-style: normal;
+    color: var(--gold);
+  }
+
+  .hero-copy p {
+    font-size: 14.5px;
+    line-height: 1.65;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 500;
+  }
+
+  /* ================= RIGHT PANEL ================= */
+  .panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 36px 24px;
+    background: linear-gradient(135deg, #fdf2f7 0%, #fae8f0 50%, #f4e3f0 100%);
+    position: relative;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 410px;
+    background: var(--card-bg);
+    border-radius: 28px;
+    padding: 40px 34px 30px;
+    box-shadow: 0 20px 45px rgba(186, 24, 91, 0.08), 0 4px 16px rgba(0, 0, 0, 0.02);
+    border: 1px solid #fce4ed;
+    position: relative;
+    z-index: 2;
+  }
+
+  .card h2 {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--ink-dark);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .card .sub {
+    font-size: 13px;
+    color: var(--ink-muted);
+    font-weight: 500;
+    margin-bottom: 24px;
+  }
+
+  .field {
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #4a1836;
+  }
+
+  .field input {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1.5px solid #f1d3df;
+    color: var(--ink-dark);
+    font-size: 14px;
+    font-family: var(--font-body);
+    outline: none;
+    transition: all 0.2s ease;
+  }
+
+  .field input::placeholder {
+    color: #b592a3;
+  }
+
+  .field input:focus {
+    border-color: var(--magenta-btn);
+    box-shadow: 0 0 0 3px rgba(190, 24, 93, 0.12);
+  }
+
+  .pw-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .pw-wrap input {
+    padding-right: 44px;
+  }
+  .pw-toggle {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    color: #b592a3;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+  }
+  .pw-toggle:hover {
+    color: var(--magenta-btn);
+  }
+
+  .forgot-link {
+    text-align: right;
+    margin-bottom: 20px;
+    margin-top: 4px;
+  }
+  .forgot-link a {
+    font-size: 12.5px;
+    color: var(--magenta-btn);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .forgot-link a:hover {
+    text-decoration: underline;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #c2255c 0%, #9e1847 100%);
+    color: #ffffff;
+    box-shadow: 0 8px 22px rgba(194, 37, 92, 0.3);
+  }
+
+  .btn-primary:hover {
+    opacity: 0.96;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 26px rgba(194, 37, 92, 0.4);
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 22px 0;
+    color: #b592a3;
+    font-size: 11.5px;
+    font-weight: 700;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #f3d5df;
+  }
+
+  .guest-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 18px;
+    border: 1.5px dashed #ebd0dc;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #ffffff;
+  }
+  .guest-row:hover {
+    background: #fff8fa;
+    border-color: var(--magenta-btn);
+  }
+  .guest-row .gtext {
+    display: flex;
+    flex-direction: column;
+  }
+  .guest-row .gtext b {
+    font-size: 13.5px;
+    color: var(--ink-dark);
+    font-weight: 700;
+  }
+  .guest-row .gtext span {
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    margin-top: 2px;
+  }
+
+  .arrow-icon {
+    font-size: 18px;
+    color: var(--magenta-btn);
+    font-weight: 700;
+  }
+
+  .signup-cta {
+    text-align: center;
+    margin-top: 22px;
+    font-size: 13px;
+    color: var(--ink-muted);
+    font-weight: 500;
+  }
+  .signup-cta a {
+    color: var(--magenta-btn);
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .signup-cta a:hover {
+    text-decoration: underline;
+  }
+
+  .error-box {
+    display: none;
+    padding: 10px 14px;
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    color: #991b1b;
+    border-radius: 10px;
+    font-size: 12.5px;
+    margin-bottom: 16px;
+  }
+  .error-box.show { display: block; }
+
+  @media (max-width: 900px) {
+    .shell { flex-direction: column; }
+    .hero { padding: 30px 24px 20px; }
+    .hero-img { max-height: 240px; }
+    .panel { padding: 28px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- ============ Left: Hero Panel ============ -->
+  <div class="hero">
+    <!-- Botanical leaf overlays -->
+    <svg class="decor-leaf a" viewBox="0 0 100 140" fill="none"><path d="M50 0C20 30 0 70 20 130C60 120 90 70 50 0Z" fill="#ffffff"/></svg>
+    <svg class="decor-leaf b" viewBox="0 0 100 140" fill="none"><path d="M50 0C20 30 0 70 20 130C60 120 90 70 50 0Z" fill="#F0A94E"/></svg>
+
+    <div class="brand">
+      <div class="brand-badge">
+        <div class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 21s-7.5-4.6-10-9.2C.4 8.3 2 4.5 5.7 4c2-.3 3.7.6 4.8 2.2C11.6 4.6 13.3 3.7 15.3 4c3.7.5 5.3 4.3 3.7 7.8C16.5 16.4 12 21 12 21z" fill="#F0A94E"/></svg>
+        </div>
+        <div>
+          <div class="brand-name">Amina</div>
+          <div class="brand-tag">MATERNAL CARE ASSISTANT</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="illo-stage">
+      <img src="grandma-and-pregnant-woman.jpg.png" alt="Maternal Care Companion" class="hero-img"/>
+    </div>
+
+    <div class="hero-copy">
+      <h1>You are not alone in <em>this journey.</em></h1>
+      <p>Ask anything about your pregnancy, day or night. Amina answers in your language, remembers your story, and knows when it's time to get you real help.</p>
+    </div>
+  </div>
+
+  <!-- ============ Right: Login Panel ============ -->
+  <div class="panel">
+    <div class="card">
+      <h2>Welcome back 💛</h2>
+      <div class="sub">Log in to continue your journey</div>
+
+      <div class="error-box" id="loginErr"></div>
+
+      <form id="loginForm">
+        <div class="field">
+          <label for="identifier">Phone number or email</label>
+          <input id="identifier" type="text" placeholder="e.g. 0912 345 678" required/>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="pw-wrap">
+            <input id="password" type="password" placeholder="Enter your password" required/>
+            <button type="button" class="pw-toggle" id="pwToggle" title="Toggle password visibility">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+        </div>
+        <div class="forgot-link">
+          <a href="#">Forgot password?</a>
+        </div>
+        <button type="submit" class="btn btn-primary">Log in</button>
+      </form>
+
+      <div class="divider">OR</div>
+
+      <div class="guest-row" id="guestBtn">
+        <div class="gtext">
+          <b>Continue as guest</b>
+          <span>Explore the app without an account</span>
+        </div>
+        <span class="arrow-icon">›</span>
+      </div>
+
+      <div class="signup-cta">Don't have an account? <a href="#">Sign up</a></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.AMA = {
+    login: function(identifier, password) {
+      if (!identifier || !password) {
+        throw new Error("Please enter your phone number/email and password.");
+      }
+      sessionStorage.setItem('maternity_user', JSON.stringify({
+        name: identifier,
+        isGuest: false,
+        loggedInAt: new Date().toISOString()
+      }));
+      sessionStorage.removeItem('maternity_consent_agreed');
+    },
+    continueAsGuest: function() {
+      sessionStorage.setItem('maternity_user', JSON.stringify({
+        name: 'Mama Guest',
+        isGuest: true,
+        loggedInAt: new Date().toISOString()
+      }));
+      sessionStorage.removeItem('maternity_consent_agreed');
+    }
+  };
+
+  document.getElementById('pwToggle').addEventListener('click', () => {
+    const pw = document.getElementById('password');
+    const type = pw.type === 'password' ? 'text' : 'password';
+    pw.type = type;
+  });
+
+  document.getElementById('loginForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const err = document.getElementById('loginErr');
+    err.classList.remove('show');
+    const identifier = document.getElementById('identifier').value.trim();
+    const password = document.getElementById('password').value;
+    try {
+      AMA.login(identifier, password);
+      window.location.href = 'index.html';
+    } catch(ex) {
+      err.textContent = ex.message;
+      err.classList.add('show');
+    }
+  });
+
+  document.getElementById('guestBtn').addEventListener('click', () => {
+    AMA.continueAsGuest();
+    window.location.href = 'index.html';
+  });
+</script>
+</body>
+</html>

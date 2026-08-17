@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-heading: 'Outfit', sans-serif;
+    --font-body: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  html, body {
+    font-family: var(--font-body);
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+}
+
+/* Light Theme Root */
+.theme-light {
+  background-color: #fcf9f5;
+  color: #1e152a;
+}
+
+/* Dark Theme Root */
+.theme-dark {
+  background-color: #0b0e14;
+  color: #f1f5f9;
+}
+
+/* Hide scrollbars completely while keeping scroll functionality */
+::-webkit-scrollbar {
+  display: none;
+  width: 0px;
+  height: 0px;
+}
+
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Glassmorphism & Light / Dark Card Effects */
+.glass-panel-dark {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+.glass-panel-light {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(233, 213, 255, 0.8);
+  box-shadow: 0 10px 30px -10px rgba(124, 58, 237, 0.08);
+}
+
+.glass-card-dark {
+  background: rgba(30, 27, 50, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+.glass-card-light {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(243, 232, 255, 0.9);
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.06);
+}
+
+/* Orb & Glow Animations */
+@keyframes orb-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 35px 10px rgba(168, 85, 247, 0.5), 0 0 60px 20px rgba(99, 102, 241, 0.3);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 50px 18px rgba(168, 85, 247, 0.75), 0 0 80px 30px rgba(99, 102, 241, 0.45);
+  }
+}
+
+.animate-orb-glow {
+  animation: orb-pulse 3s ease-in-out infinite;
+}
+
+.utopia-gold-gradient {
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 50%, #b45309 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.utopia-purple-gradient {
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #4c1d95 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.02); }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 4s ease-in-out infinite;
+}
+
