@@ -13,30 +13,48 @@ except Exception as e:
     print(f"[LLM Service] Groq client init warning: {e}")
     groq_client = None
 
-import time
+FALLBACK_MODELS = [
+    os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+    "llama-3.1-8192",
+    "llama3-70b-8192",
+    "llama3-8b-8192",
+    "mixtral-8x7b-32768",
+    "gemma2-9b-it"
+]
 
-def call_groq_with_retry(messages: list, model: str = "llama-3.3-70b-versatile", temperature: float = 0.2, max_tokens: int = 500, max_retries: int = 2) -> str:
+def call_groq_with_retry(messages: list, model: str = None, temperature: float = 0.2, max_tokens: int = 500, max_retries: int = 1) -> str:
     """
-    Call Groq API with exponential backoff retries (2 retries).
+    Call Groq API with exponential backoff retries and automatic model fallback.
     """
     if not groq_client:
         raise RuntimeError("Groq client is not initialized or API key is missing")
 
+    models_to_try = []
+    if model:
+        models_to_try.append(model)
+    for m in FALLBACK_MODELS:
+        if m not in models_to_try:
+            models_to_try.append(m)
+
     last_err = None
-    for attempt in range(max_retries + 1):
-        try:
-            completion = groq_client.chat.completions.create(
-                messages=messages,
-                model=model,
-                temperature=temperature,
-                max_tokens=max_tokens
-            )
-            return completion.choices[0].message.content.strip()
-        except Exception as e:
-            last_err = e
-            print(f"[LLM Service] Groq API call attempt {attempt + 1}/{max_retries + 1} failed: {e}")
-            if attempt < max_retries:
-                time.sleep(2 ** attempt)
+    for target_model in models_to_try:
+        for attempt in range(max_retries + 1):
+            try:
+                completion = groq_client.chat.completions.create(
+                    messages=messages,
+                    model=target_model,
+                    temperature=temperature,
+                    max_tokens=max_tokens
+                )
+                return completion.choices[0].message.content.strip()
+            except Exception as e:
+                last_err = e
+                err_msg = str(e).lower()
+                print(f"[LLM Service] Groq model '{target_model}' attempt {attempt + 1} failed: {e}")
+                if "model_not_found" in err_msg or "404" in err_msg or "does not exist" in err_msg:
+                    break  # Immediately try next model in fallback list
+                if attempt < max_retries:
+                    time.sleep(1)
 
     raise last_err
 
