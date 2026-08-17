@@ -74,6 +74,17 @@ SELF_ADMIN_DOSAGE_PHRASES = [
     "what pill can i take",
 ]
 
+ROUTINE_NAV_MESSAGES = [
+    "what's right for me",
+    "whats right for me",
+    "i want to explore what's right for me",
+    "i want to explore pregnancy care",
+    "pregnancy care",
+    "first trimester",
+    "second trimester",
+    "third trimester"
+]
+
 def check_safety_guardrails(message: str, session_id: str = "default_session") -> Optional[Dict[str, Any]]:
     """
     Two-layer pre-processing check against global safety guardrails:
@@ -82,6 +93,10 @@ def check_safety_guardrails(message: str, session_id: str = "default_session") -
     Returns a response dict if EMERGENCY or CONCERNING is flagged, else None.
     """
     msg_lower = message.lower().strip()
+
+    # Fast-pass for known routine navigation prompts
+    if any(nav in msg_lower for nav in ROUTINE_NAV_MESSAGES):
+        return None
 
     # Layer 1: Keyword Check
     kw_flag = None
@@ -106,7 +121,16 @@ def check_safety_guardrails(message: str, session_id: str = "default_session") -
     llm_label = classify_safety_risk(message)
 
     # Determine final triage result
-    is_emergency = (kw_flag and kw_flag[0] == "EMERGENCY") or (llm_label == "EMERGENCY")
+    # If explicit emergency keyword matched, always flag EMERGENCY.
+    # If LLM flags EMERGENCY without explicit keyword, verify presence of medical symptom context.
+    is_emergency = False
+    if kw_flag and kw_flag[0] == "EMERGENCY":
+        is_emergency = True
+    elif llm_label == "EMERGENCY":
+        symptom_indicators = ["pain", "bleed", "headache", "fever", "cramp", "leak", "dizzy", "vomit", "sick", "baby", "movement", "fluid", "hurt", "swelling", "blood", "pressure"]
+        if any(w in msg_lower for w in symptom_indicators):
+            is_emergency = True
+
     is_concerning = (kw_flag and kw_flag[0] == "CONCERNING") or (llm_label == "CONCERNING")
 
     # 1. Handle EMERGENCY Trigger

@@ -15,11 +15,12 @@ except Exception as e:
     groq_client = None
 
 FALLBACK_MODELS = [
-    os.getenv("GROQ_MODEL", "groq/compound"),
+    os.getenv("GROQ_MODEL", "groq/compound-mini"),
     "groq/compound-mini",
     "qwen/qwen3.6-27b",
     "openai/gpt-oss-120b",
     "openai/gpt-oss-20b",
+    "groq/compound",
     "allam-2-7b"
 ]
 
@@ -64,14 +65,31 @@ TRIAGE_CLASSIFIER_PROMPT = (
     "on maternal health risk. Respond with ONLY one word: EMERGENCY, CONCERNING, or ROUTINE. "
     "EMERGENCY = signs of a medical emergency (bleeding, severe pain, reduced fetal movement, severe headache/vision changes, high fever, water breaking early). "
     "CONCERNING = signs of emotional distress, coercion, or pressure from others regarding the pregnancy. "
-    "ROUTINE = general questions."
+    "ROUTINE = general questions or standard feature menu selections."
 )
+
+import re
+
+NAVIGATION_PROMPTS = [
+    "what's right for me",
+    "whats right for me",
+    "i want to explore what's right for me.",
+    "i want to explore pregnancy care.",
+    "pregnancy care",
+    "first trimester",
+    "second trimester",
+    "third trimester"
+]
 
 def classify_safety_risk(message: str) -> str:
     """
     Lightweight Groq LLM safety triage classifier with retry resilience.
     Returns 'EMERGENCY', 'CONCERNING', or 'ROUTINE'.
     """
+    msg_lower = message.lower().strip()
+    if any(nav in msg_lower for nav in NAVIGATION_PROMPTS):
+        return "ROUTINE"
+
     if not groq_client:
         return "ROUTINE"
 
@@ -81,15 +99,27 @@ def classify_safety_risk(message: str) -> str:
                 {"role": "system", "content": TRIAGE_CLASSIFIER_PROMPT},
                 {"role": "user", "content": message}
             ],
-            model="llama-3.3-70b-versatile",
+            model="groq/compound-mini",
             temperature=0.0,
-            max_tokens=10,
+            max_tokens=150,
             max_retries=2
-        ).upper()
+        )
 
-        if "EMERGENCY" in raw_res:
+        # Strip reasoning tags <think>...</think> if model output includes thought process
+        cleaned = re.sub(r'<think>.*?</think>', '', raw_res, flags=re.DOTALL).strip().upper()
+        lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
+        target_token = lines[-1] if lines else cleaned
+
+        if target_token == "EMERGENCY" or target_token.startswith("EMERGENCY"):
             return "EMERGENCY"
-        elif "CONCERNING" in raw_res:
+        elif target_token == "CONCERNING" or target_token.startswith("CONCERNING"):
+            return "CONCERNING"
+        elif target_token == "ROUTINE" or target_token.startswith("ROUTINE"):
+            return "ROUTINE"
+
+        if re.search(r'\bEMERGENCY\b', target_token):
+            return "EMERGENCY"
+        elif re.search(r'\bCONCERNING\b', target_token):
             return "CONCERNING"
         else:
             return "ROUTINE"

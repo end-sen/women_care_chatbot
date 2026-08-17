@@ -1,6 +1,6 @@
 import React, { Suspense, useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, useGLTF, useTexture, Float, Environment, Sparkles } from '@react-three/drei';
+import { OrbitControls, useGLTF, useTexture, Float, Sparkles } from '@react-three/drei';
 import { Volume2, Bot, Eye, ShieldCheck, Sparkle, MousePointer } from 'lucide-react';
 import * as THREE from 'three';
 
@@ -366,11 +366,13 @@ export default function AvatarCanvas({ isSpeaking = false, theme = 'dark' }) {
             onError={() => setHasWebGLError(true)}
             className="w-full h-full cursor-grab active:cursor-grabbing relative z-10"
           >
-            {/* Studio Lighting Matching Coral/Peach Background */}
+            {/* Studio Lighting - 100% Offline & Local (Prevents external HDRI 503 fetch errors) */}
             <ambientLight intensity={isLight ? 2.4 : 2.0} color="#ffedd5" />
             <directionalLight position={[3, 5, 4]} intensity={2.8} color="#fed7aa" />
             <directionalLight position={[-3, 2, -3]} intensity={1.5} color="#f472b6" />
+            <directionalLight position={[0, -2, 3]} intensity={0.8} color="#e0e7ff" />
             <pointLight position={[0, 1.3, 0.8]} intensity={1.8} color="#fb7185" />
+            <hemisphereLight skyColor="#fef3c7" groundColor="#4c1d95" intensity={0.8} />
 
             <Sparkles count={35} scale={2.8} size={2.2} speed={0.3} color="#fca5a5" />
 
@@ -378,7 +380,6 @@ export default function AvatarCanvas({ isSpeaking = false, theme = 'dark' }) {
               <Float speed={1.1} rotationIntensity={0.04} floatIntensity={0.05}>
                 <Model isSpeaking={isSpeaking} />
               </Float>
-              <Environment preset="studio" />
             </Suspense>
 
             <OrbitControls

@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 frontend/node_modules/
+venv/
+backend/venv/
+.venv/
 
 # Production builds
 dist/
@@ -19,6 +22,9 @@ backend/app/__pycache__/
 # Logs
 *.log
 backend/logs/
+
+# Loose root 3D model copies (already stored in frontend/public/models/)
+/*.glb
 
 # IDE / OS junk
 .vscode/
