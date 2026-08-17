@@ -1,4 +1,5 @@
 import os
+import time
 from typing import List, Dict, Any, Tuple
 from dotenv import load_dotenv
 
@@ -15,9 +16,9 @@ except Exception as e:
 
 FALLBACK_MODELS = [
     os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
-    "llama-3.1-8192",
-    "llama3-70b-8192",
+    "llama-3.1-70b-versatile",
     "llama3-8b-8192",
+    "llama-3.2-3b-preview",
     "mixtral-8x7b-32768",
     "gemma2-9b-it"
 ]
