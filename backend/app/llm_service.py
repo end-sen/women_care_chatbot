@@ -231,12 +231,7 @@ def generate_grounded_response(
             )
             return answer, used_sources
         except Exception as e:
-            print(f"[LLM Service] Groq API response generation retries exhausted: {e}. Returning resilience fallback.")
-            resilience_msg = (
-                "I'm having trouble responding right now — please try again in a moment, "
-                "or use the 'Talk to someone now' button if this is urgent."
-            )
-            return resilience_msg, []
+            print(f"[LLM Service] Groq API response generation failed: {e}. Falling back to local WHO document synthesis.")
 
     # Fallback RAG synthesis when Groq API key is absent
     msg_lower = user_message.lower()
