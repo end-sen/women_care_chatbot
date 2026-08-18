@@ -15,11 +15,11 @@ except Exception as e:
     groq_client = None
 
 FALLBACK_MODELS = [
-    os.getenv("GROQ_MODEL", "groq/compound-mini"),
-    "groq/compound-mini",
-    "qwen/qwen3.6-27b",
+    os.getenv("GROQ_MODEL", "openai/gpt-oss-20b"),
     "openai/gpt-oss-20b",
-    "groq/compound"
+    "allam-2-7b",
+    "qwen/qwen3.6-27b",
+    "groq/compound-mini"
 ]
 
 def call_groq_with_retry(messages: list, model: str = None, temperature: float = 0.2, max_tokens: int = 500, max_retries: int = 1) -> str:
@@ -106,7 +106,7 @@ def classify_safety_risk(message: str) -> str:
                 {"role": "system", "content": TRIAGE_CLASSIFIER_PROMPT},
                 {"role": "user", "content": message}
             ],
-            model="groq/compound-mini",
+            model=os.getenv("GROQ_MODEL", "openai/gpt-oss-20b"),
             temperature=0.0,
             max_tokens=150,
             max_retries=2
@@ -285,7 +285,7 @@ def generate_grounded_response(
                     {"role": "system", "content": sys_msg},
                     {"role": "user", "content": user_message}
                 ],
-                model="groq/compound-mini",
+                model=os.getenv("GROQ_MODEL", "openai/gpt-oss-20b"),
                 temperature=0.2,
                 max_tokens=900,
                 max_retries=2
