@@ -117,6 +117,18 @@ class LocalRAGEngine:
         self.documents = []
 
         file_meta_map = {
+            "menstrual_health.txt": {
+                "source": "WHO - Menstrual & Reproductive Health Guidelines",
+                "topic_tag": "menstrual_health"
+            },
+            "pcos_and_hormonal_health.txt": {
+                "source": "WHO - PCOS & Hormonal Health Guidelines",
+                "topic_tag": "pcos_hormonal"
+            },
+            "sexual_health_and_stis.txt": {
+                "source": "WHO - Sexual Health & Gynecological Symptoms",
+                "topic_tag": "sexual_health_stis"
+            },
             "antenatal_care.txt": {
                 "source": "WHO - Antenatal Care Guidelines",
                 "topic_tag": "antenatal_care"
@@ -191,13 +203,19 @@ class LocalRAGEngine:
 
         # Preferred Topic Tags for Scoped Retrieval
         preferred_tags = []
-        if any(kw in query_lower for kw in ["missed period", "missed my period", "period missed", "late period", "tested positive", "pregnancy test"]):
+        if any(kw in query_lower for kw in ["pcos", "polycystic", "hirsutism", "acne and periods", "excess hair"]):
+            preferred_tags = ["pcos_hormonal"]
+        elif any(kw in query_lower for kw in ["missed period", "missed my period", "period missed", "late period", "irregular period", "irregular cycle", "painful period", "dysmenorrhea", "heavy bleeding", "cramps"]):
+            preferred_tags = ["menstrual_health"]
+        elif any(kw in query_lower for kw in ["sti", "std", "discharge", "itching", "burning", "unprotected sex", "uti", "vaginal"]):
+            preferred_tags = ["sexual_health_stis"]
+        elif any(kw in query_lower for kw in ["tested positive", "pregnancy test", "think i am pregnant", "think i'm pregnant"]):
             preferred_tags = ["options", "antenatal_care"]
         elif any(kw in query_lower for kw in ["nauseous", "nausea", "morning sickness", "vomiting", "food", "diet", "vitamin", "folic acid", "iron", "calcium", "eat", "drink", "nutrition", "trimester"]):
             preferred_tags = ["nutrition"]
         elif any(kw in query_lower for kw in ["bleeding", "severe pain", "fever", "headache", "vision", "danger", "emergency", "leaking"]):
             preferred_tags = ["danger_signs"]
-        elif any(kw in query_lower for kw in ["contraceptive", "contraception", "postpartum family planning", "condom", "iud", "implants", "birth control"]):
+        elif any(kw in query_lower for kw in ["contraceptive", "contraception", "family planning", "condom", "iud", "implants", "birth control"]):
             preferred_tags = ["contraception"]
         elif any(kw in query_lower for kw in ["termination", "abortion", "options", "pregnancy options"]):
             preferred_tags = ["options"]
