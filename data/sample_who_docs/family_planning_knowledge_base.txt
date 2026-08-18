@@ -1,0 +1,96 @@
+# WHO & Global Evidence Guidelines: Family Planning & Contraception Knowledge Base
+
+## Reference Citations & Grounded Sources
+- R1: WHO, Family planning/contraception methods, 3 Jul 2025. (https://www.who.int/news-room/fact-sheets/detail/family-planning-contraception)
+- R2: Yildiz et al., A flexible model for reconstructing education-specific fertility rates: The case of sub-Saharan Africa, Demographic Research, 54(12), 371–404, 2026, doi:10.4054/DemRes.2026.54.12. (https://www.demographic-research.org/articles/volume/54/12)
+- R3: Debere, Guo & Zheng, Community-level variations in contraceptive use among women in union and those not in union: a comparative study of 35 sub-Saharan African countries, Contraception and Reproductive Medicine, 11, 39, 2026. (https://link.springer.com/article/10.1186/s40834-026-00453-z)
+- R4: Lin, Smith-Greenaway & Ferguson, On the Population Reach of Contraception: An Analysis of Child Health in Sub-Saharan Africa, Population Research and Policy Review, 45, 28, 2026. (https://link.springer.com/article/10.1007/s11113-026-10010-w)
+- R5: Determinants and predictive modeling of long-acting reversible contraceptive use in Sub-Saharan Africa, AJOG Global Reports, 6(3), 100662, 2026, doi:10.1016/j.xagr.2026.100662. (https://www.sciencedirect.com/science/article/pii/S2666577826000602)
+- R6: WHO, Medical Eligibility Criteria for Contraceptive Use, 6th ed., 2025. (https://www.who.int/publications/b/81082)
+
+---
+
+## 1. Family Planning Fundamentals & Meaning
+- What is family planning? / What does family planning mean?
+  Family planning allows individuals and couples to anticipate, decide, and attain their desired number of children, as well as the spacing and timing of their births, through the use of safe contraceptive methods and involuntary infertility support [R1].
+- How does family planning help families?
+  Family planning protects maternal and child health, fosters financial stability, empowers women through education and career growth, and improves overall child survival and development [R1, R2, R4].
+- Can family planning help space children?
+  Yes. Birth spacing of at least 24 months between a live birth and the next pregnancy reduces risk of maternal anemia, prematurity, low birth weight, and child stunting [R1, R4].
+- Who can use family planning?
+  Family planning is available to all individuals and couples of reproductive age—women, men, youth, and unmarried individuals—supported by WHO global human rights guidelines [R1, R3, R6].
+- Explain family planning simply.
+  Family planning means using safe birth control methods so you can choose if, when, and how many children to have, helping keep mothers, babies, and families healthy [R1].
+
+## 2. Contraception Concepts & Method Types
+- What is contraception?
+  Contraception refers to medical devices, hormonal methods, barrier techniques, or procedures used to prevent unintended pregnancy [R1, R6].
+- How does contraception prevent pregnancy?
+  Contraception prevents pregnancy by stopping ovulation (hormonal methods), blocking sperm from reaching an egg (barrier methods like condoms), or preventing fertilization/implantation (copper and hormonal IUDs) [R1, R6].
+- What types of contraception are available?
+  Options include:
+  1. Long-Acting Reversible Contraception (LARC): Subdermal implants & Intrauterine Devices (IUDs) [R1, R5].
+  2. Hormonal Short-Acting: Oral contraceptive pills, Depo-Provera injectables, patches, vaginal rings [R1].
+  3. Barrier Methods: Male and female condoms (also protect against STIs/HIV) [R1].
+  4. Permanent Methods: Tubal ligation & Vasectomy [R1].
+  5. Behavioral: Lactational Amenorrhea Method (LAM) and fertility awareness [R1].
+- Can contraception be temporary?
+  Yes. Almost all non-permanent contraceptive methods (implants, IUDs, pills, injectables, condoms) are temporary and fully reversible [R1, R5].
+- Are there different choices for different people?
+  Yes. Contraceptive choice varies based on personal medical history, age, lifestyle, breastfeeding status, and preference under WHO Medical Eligibility Criteria [R1, R6].
+- Explain contraception simply.
+  Contraception (birth control) is any method used to stop an egg from being fertilized by sperm during sex, giving you full control over when to get pregnant [R1].
+
+## 3. Effectiveness & Most Effective Methods
+- Which contraceptive methods are most effective? / Which method has very high effectiveness?
+  Long-Acting Reversible Contraceptives (LARC)—subdermal implants and Intrauterine Devices (IUDs)—and permanent sterilization are the most effective methods, with over 99% efficacy [R1, R5].
+- Are implants effective?
+  Yes. Subdermal implants are over 99% effective for 3 to 5 years and require no daily action [R1, R5].
+- Are IUDs effective?
+  Yes. Copper IUDs and Levonorgestrel (LNG) IUDs are over 99% effective for 3 to 10+ years depending on the type [R1, R5].
+- Which method needs the least daily remembering?
+  Implants and IUDs require zero daily remembering once inserted. Injectables require attention only every 2 to 3 months [R1, R5].
+- Explain the most effective options simply.
+  Implants (arm rod) and IUDs (small uterine device) are over 99% effective at preventing pregnancy because you don't need to remember to do anything every day [R1, R5].
+
+## 4. Contraceptive Safety & Health Conditions
+- Which contraceptive is safest? / Is there one safest contraceptive for everyone?
+  There is no single "safest" method for everyone. All WHO-approved contraceptives are medically safe for healthy individuals, but the best choice depends on personal health factors [R1, R6].
+- How do I choose a safe method? / Should I ask a health worker before choosing?
+  Consult a trained healthcare provider who assesses your blood pressure, medical history, and goals against WHO Medical Eligibility Criteria [R1, R6].
+- Can health conditions affect contraceptive choice?
+  Yes. Conditions such as severe hypertension, migraines with aura, or deep vein thrombosis guide method selection (e.g., favoring progestin-only or copper non-hormonal methods) [R6].
+- Explain contraceptive safety simply.
+  Birth control is safe for almost everyone. A nurse or doctor will check your health history to find the method that is safest and best suited for your body [R1, R6].
+
+## 5. Side Effects & Period Changes
+- What are the side effects of contraception?
+  Common mild side effects include changes in bleeding patterns, temporary headaches, nausea, or breast tenderness. These generally resolve within 3 to 6 months [R1, R6].
+- Can contraception change my periods?
+  Yes. Hormonal methods (implants, injectables, pills, LNG-IUDs) can cause lighter periods, spotting, or temporary absence of bleeding (amenorrhea). Copper IUDs may cause heavier early menstruation [R1, R5, R6].
+- Can contraceptives cause headaches or nausea?
+  Yes. Some users experience mild nausea or headache during the first few months of starting a new hormonal method [R1, R6].
+- Does every person get side effects? / When should I see a doctor?
+  No, many people experience no side effects at all. Seek medical care if you experience severe persistent headaches, intense pelvic pain, heavy abnormal bleeding, or leg pain [R1, R6].
+- Explain contraceptive side effects simply.
+  Mild side effects like spotty periods or nausea can happen at first, but they are usually harmless and fade after a few months as your body adjusts [R1, R6].
+
+## 6. Fertility & Infertility Misconceptions
+- Can contraception make me infertile? / Will contraception stop me having children later?
+  No. Contraception does NOT cause infertility. Normal fertility returns promptly after stopping use [R1, R5, R6].
+- Can I become pregnant after stopping contraception?
+  Yes. You can become pregnant as soon as temporary contraceptive use is stopped [R1, R5].
+- Does the pill cause infertility? / Does an implant cause infertility?
+  No. Neither oral contraceptive pills nor subdermal implants cause permanent infertility [R1, R5, R6].
+- Explain contraception and fertility simply.
+  Birth control only prevents pregnancy while you use it. It does not cause infertility; when you stop, your body returns to its natural fertility [R1, R5].
+
+## 7. Birth Spacing & Pregnancy Timing
+- Why is birth spacing important? / Why should couples space pregnancies?
+  Spacing births by at least 24 months allows the mother's body to recover physically and nutritionally, reducing maternal mortality, prematurity, and child stunting [R1, R4].
+- Is spacing pregnancies good for the mother?
+  Yes. Recommended birth spacing reduces maternal physical exhaustion, severe anemia, and uterine complications [R1, R4].
+- Can spacing help a family prepare? / How can I plan the timing of my next pregnancy?
+  Spacing helps families dedicate financial, emotional, and nutritional resources to each child. Work with a health provider to choose a method until you feel ready for your next pregnancy [R1, R2, R4, R5].
+- Explain birth spacing simply.
+  Birth spacing means waiting at least 2 years between babies. It keeps mothers strong, gives babies a healthy start, and helps families prepare [R1, R4].

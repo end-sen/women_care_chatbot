@@ -145,6 +145,10 @@ class LocalRAGEngine:
                 "source": "WHO - Family Planning & Contraceptive Methods",
                 "topic_tag": "contraception"
             },
+            "family_planning_knowledge_base.txt": {
+                "source": "WHO & Global Evidence - Family Planning, Birth Spacing & Contraception",
+                "topic_tag": "contraception"
+            },
             "options_and_pregnancy_guidance.txt": {
                 "source": "WHO - Reproductive Options & Clinical Guidance",
                 "topic_tag": "options"
@@ -215,7 +219,7 @@ class LocalRAGEngine:
             preferred_tags = ["nutrition"]
         elif any(kw in query_lower for kw in ["bleeding", "severe pain", "fever", "headache", "vision", "danger", "emergency", "leaking"]):
             preferred_tags = ["danger_signs"]
-        elif any(kw in query_lower for kw in ["contraceptive", "contraception", "family planning", "condom", "iud", "implants", "birth control"]):
+        elif any(kw in query_lower for kw in ["contraceptive", "contraception", "family planning", "condom", "iud", "implants", "implant", "birth control", "birth spacing", "spacing", "infertile", "infertility", "side effects", "safest", "effective", "effectiveness"]):
             preferred_tags = ["contraception"]
         elif any(kw in query_lower for kw in ["termination", "abortion", "options", "pregnancy options"]):
             preferred_tags = ["options"]
