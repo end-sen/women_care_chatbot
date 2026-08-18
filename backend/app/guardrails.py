@@ -86,9 +86,12 @@ ROUTINE_NAV_MESSAGES = [
     "health tips",
     "nutrition guide",
     "symptoms check",
+    "overview of termination care",
+    "safe termination guidance",
     "what general maternal health tips and guidelines should i follow?",
     "what vitamins, foods, and nutrition are recommended during pregnancy?",
-    "what common symptoms require medical attention during pregnancy?"
+    "what common symptoms require medical attention during pregnancy?",
+    "what options exist for safe clinical termination care, who clinical standards, and licensed provider requirements?"
 ]
 
 def check_safety_guardrails(message: str, session_id: str = "default_session") -> Optional[Dict[str, Any]]:
