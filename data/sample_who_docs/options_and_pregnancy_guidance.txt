@@ -1,17 +1,41 @@
 # WHO Guidelines: Reproductive Options & Clinical Pregnancy Guidance
 
 ## 1. Comprehensive Pregnancy Options Guidance
-When an individual evaluates their pregnancy, health systems and care providers must offer neutral, non-judgmental, evidence-based information across all reproductive options:
+When an individual evaluates their pregnancy, health systems and care providers must offer neutral, empathetic, non-judgmental, and evidence-based information across all reproductive options:
 - Continuing the Pregnancy to Term & Parenting: Access to routine antenatal care, social support services, nutritional aid, and community healthcare.
 - Adoption & Foster Placement Options: Guidance on legal frameworks, social welfare assistance, and confidential birth planning.
 - Medical & Surgical Termination of Pregnancy: Access to safe, legal care performed or supervised by qualified, licensed medical providers in accordance with local clinical standards.
 
-## 2. Medical Overview of Abortion Care (WHO Recommendations)
-- Safe abortion is a routine healthcare intervention when performed in accordance with WHO clinical guidelines by trained providers.
-- Medical Methods (Medication Abortion): Uses approved clinical medications (mifepristone and misoprostol) administered under clinical protocol.
-- Surgical Methods: Vacuum aspiration or dilation and evacuation (D&E) conducted in equipped medical facilities.
-- Post-Abortion Care: Immediate access to clinical evaluation, emergency care for complications (such as retained tissue or infection), and post-abortion family planning counseling.
+## 2. Detailed Overview of Safe Abortion Methods (WHO Standards)
+Safe abortion is a routine, highly effective healthcare intervention when performed using WHO-recommended methods.
 
-## 3. Important Safety Note on Licensed Providers
-- Self-administering unverified substances, non-prescribed dosages, or dangerous home remedies poses extreme risks of maternal hemorrhage, severe infection, uterine perforation, and death.
-- All reproductive health decisions and procedures must be carried out in consultation with certified healthcare professionals at accredited health facilities.
+### Method 1: Medical Abortion (Medication Regimen)
+- Overview: Uses approved medications to safely end an early pregnancy without surgery.
+- Combination Protocol: Consists of Mifepristone (which blocks pregnancy hormones) followed 24–48 hours later by Misoprostol (which causes the uterus to contract and empty).
+- Timing: Highly effective and commonly used in the first trimester (up to 12 weeks of gestation).
+- What to Expect: Cramping and bleeding similar to a heavy menstrual period, passing of blood clots, mild fever or chills, and nausea. Bleeding gradually lightens over 1 to 2 weeks.
+- Self-Care & Support: Rest, adequate hydration, warm heating pads for cramping, and over-the-counter pain relief (such as ibuprofen).
+
+### Method 2: Surgical / In-Clinic Procedure Methods
+- Manual Vacuum Aspiration (MVA): A gentle, quick 5-10 minute in-clinic procedure using light suction to empty the uterus. Recommended up to 12-14 weeks of gestation.
+- Dilation & Evacuation (D&E): Used for pregnancies beyond 12-14 weeks, performed with cervical dilation and medical instruments.
+- What to Expect: Performed with local anesthesia or light sedation to ensure comfort. Quick recovery with minimal spotting or mild cramping over a few days.
+
+## 3. Post-Termination Care & Recovery Safety
+- Normal Recovery: Light bleeding or spotting for 1–2 weeks, mild cramping, and return of normal menstrual cycle within 4–6 weeks.
+- Critical Complication Red Flags (Seek Immediate Medical Care):
+  - Heavy bleeding: Soaking more than 2 maxi pads per hour for 2 consecutive hours.
+  - Severe pain: Severe abdominal or pelvic pain that does not improve with pain medication.
+  - High fever: Temperature above 38°C (100.4°F) lasting over 4 hours, or chills.
+  - Foul-smelling vaginal discharge or severe dizziness/fainting.
+
+## 4. Preventing Unintended Pregnancies (Future Safety & Contraception)
+Fertility can return as early as 8 to 14 days after a pregnancy termination. Effective prevention methods include:
+- Emergency Contraception: Levonorgestrel or Ulipristal acetate pills taken within 72–120 hours of unprotected intercourse, or Copper IUD inserted within 5 days.
+- Long-Acting Reversible Contraception (LARC): IUDs (Copper or Hormonal) and Subdermal Implants (over 99% effective, lasting 3–10 years). Can be placed immediately post-procedure.
+- Short-Acting Hormonal Methods: Daily oral contraceptive pills, 3-monthly Depo-Provera injections, patches, or vaginal rings.
+- Barrier Methods: Male and female condoms provide dual protection against unintended pregnancy and STIs/HIV.
+
+## 5. Non-Judgmental & Confidential Support
+- Health decisions are deeply personal. Individuals seeking information deserve private, compassionate, non-judgmental guidance without shame, fear, or coercion.
+- Self-administering unverified chemicals, non-prescribed dosages, or dangerous home remedies poses extreme health risks (hemorrhage, infection, uterine perforation). Always use verified clinical protocols and licensed care.
