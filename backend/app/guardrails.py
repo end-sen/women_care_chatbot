@@ -82,7 +82,13 @@ ROUTINE_NAV_MESSAGES = [
     "pregnancy care",
     "first trimester",
     "second trimester",
-    "third trimester"
+    "third trimester",
+    "health tips",
+    "nutrition guide",
+    "symptoms check",
+    "what general maternal health tips and guidelines should i follow?",
+    "what vitamins, foods, and nutrition are recommended during pregnancy?",
+    "what common symptoms require medical attention during pregnancy?"
 ]
 
 def check_safety_guardrails(message: str, session_id: str = "default_session") -> Optional[Dict[str, Any]]:

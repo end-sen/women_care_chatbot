@@ -73,12 +73,18 @@ import re
 NAVIGATION_PROMPTS = [
     "what's right for me",
     "whats right for me",
-    "i want to explore what's right for me.",
-    "i want to explore pregnancy care.",
+    "i want to explore what's right for me",
+    "i want to explore pregnancy care",
     "pregnancy care",
     "first trimester",
     "second trimester",
-    "third trimester"
+    "third trimester",
+    "health tips",
+    "nutrition guide",
+    "symptoms check",
+    "what general maternal health tips and guidelines should i follow?",
+    "what vitamins, foods, and nutrition are recommended during pregnancy?",
+    "what common symptoms require medical attention during pregnancy?"
 ]
 
 def classify_safety_risk(message: str) -> str:
