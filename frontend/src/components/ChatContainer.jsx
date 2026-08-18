@@ -4,6 +4,100 @@ import SourceBadge from './SourceBadge';
 import SafetyAlertCard from './SafetyAlertCard';
 import QuickReplies from './QuickReplies';
 
+function FormattedMessageText({ text, isLight }) {
+  if (!text) return null;
+
+  const lines = text.split('\n');
+  const elements = [];
+  let tableBuffer = [];
+
+  const flushTable = (key) => {
+    if (tableBuffer.length === 0) return;
+    const cleanLines = tableBuffer.filter(l => l.trim().startsWith('|') && !l.includes('|---') && !l.includes('|----'));
+    if (cleanLines.length > 0) {
+      const headers = cleanLines[0].split('|').map(c => c.trim()).filter(Boolean);
+      const rows = cleanLines.slice(1).map(r => r.split('|').map(c => c.trim()).filter(Boolean));
+
+      elements.push(
+        <div key={`tbl-${key}`} className={`my-2.5 overflow-x-auto rounded-xl border p-1 shadow-sm ${
+          isLight ? 'border-purple-200 bg-white/70' : 'border-purple-500/30 bg-purple-950/30'
+        }`}>
+          <table className="w-full text-left text-xs border-collapse">
+            {headers.length > 0 && (
+              <thead>
+                <tr className={`border-b font-bold ${
+                  isLight ? 'border-purple-200 bg-purple-100/60 text-purple-950' : 'border-purple-500/30 bg-purple-900/40 text-purple-200'
+                }`}>
+                  {headers.map((h, i) => (
+                    <th key={i} className="p-2">{h.replace(/\*\*/g, '')}</th>
+                  ))}
+                </tr>
+              </thead>
+            )}
+            <tbody>
+              {rows.map((row, rIdx) => (
+                <tr key={rIdx} className="border-b border-purple-500/10">
+                  {row.map((cell, cIdx) => (
+                    <td key={cIdx} className="p-2 align-top">{cell.replace(/\*\*/g, '')}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    tableBuffer = [];
+  };
+
+  lines.forEach((line, idx) => {
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith('|')) {
+      tableBuffer.push(line);
+      return;
+    } else if (tableBuffer.length > 0) {
+      flushTable(idx);
+    }
+
+    if (trimmed === '---' || trimmed === '***' || trimmed === '___') {
+      elements.push(<hr key={idx} className={`my-2.5 border-t ${isLight ? 'border-purple-300/60' : 'border-purple-500/30'}`} />);
+      return;
+    }
+
+    if (trimmed.startsWith('### ') || trimmed.startsWith('## ') || trimmed.startsWith('# ')) {
+      const title = trimmed.replace(/^#+\s*/, '').replace(/\*\*/g, '');
+      elements.push(
+        <div key={idx} className={`font-bold text-xs sm:text-sm mt-3 mb-1 ${isLight ? 'text-purple-950' : 'text-purple-200'}`}>
+          {title}
+        </div>
+      );
+      return;
+    }
+
+    if (!trimmed) return;
+
+    // Render line with bold inline formatting
+    const parts = trimmed.split(/(\*\*.*?\*\*)/g);
+    elements.push(
+      <p key={idx} className="my-1 leading-relaxed">
+        {parts.map((part, pIdx) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={pIdx} className="font-semibold">{part.slice(2, -2)}</strong>;
+          }
+          return part;
+        })}
+      </p>
+    );
+  });
+
+  if (tableBuffer.length > 0) {
+    flushTable(lines.length);
+  }
+
+  return <div className="space-y-0.5">{elements}</div>;
+}
+
 export default function ChatContainer({
   messages,
   isTyping,
@@ -223,7 +317,7 @@ export default function ChatContainer({
                       : 'bg-slate-900/80 border border-purple-500/20 text-slate-100 rounded-tl-none backdrop-blur-md'
                   }`}
                 >
-                  {msg.text}
+                  <FormattedMessageText text={msg.text} isLight={isLight} />
 
                   {!isUser && msg.sources && msg.sources.length > 0 && <SourceBadge sources={msg.sources} />}
                 </div>
