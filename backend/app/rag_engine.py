@@ -189,55 +189,45 @@ class LocalRAGEngine:
                 last_topic = recent_user_turns[-1]
                 search_query = f"{last_topic} - {user_query}"
 
-        # Preferred Topic Tags for Soft Boost
+        # Preferred Topic Tags for Scoped Retrieval
         preferred_tags = []
-        if any(kw in query_lower for kw in ["nauseous", "nausea", "morning sickness", "vomiting", "food", "diet", "vitamin", "folic acid", "iron", "calcium", "eat", "drink", "nutrition", "trimester"]):
-            preferred_tags.append("nutrition")
-        if any(kw in query_lower for kw in ["bleeding", "severe pain", "fever", "headache", "vision", "danger", "emergency", "leaking"]):
-            preferred_tags.append("danger_signs")
-        if any(kw in query_lower for kw in ["contraceptive", "contraception", "family planning", "condom", "iud", "pill", "implants", "birth control", "prevention"]):
-            preferred_tags.append("contraception")
-        if any(kw in query_lower for kw in ["termination", "abortion", "adoption", "options", "pregnancy options"]):
-            preferred_tags.append("options")
-        if any(kw in query_lower for kw in ["backpain", "back pain", "fatigue", "swelling", "symptoms", "appointment", "anc", "schedule", "visit"]):
-            preferred_tags.append("antenatal_care")
+        if any(kw in query_lower for kw in ["missed period", "missed my period", "period missed", "late period", "tested positive", "pregnancy test"]):
+            preferred_tags = ["options", "antenatal_care"]
+        elif any(kw in query_lower for kw in ["nauseous", "nausea", "morning sickness", "vomiting", "food", "diet", "vitamin", "folic acid", "iron", "calcium", "eat", "drink", "nutrition", "trimester"]):
+            preferred_tags = ["nutrition"]
+        elif any(kw in query_lower for kw in ["bleeding", "severe pain", "fever", "headache", "vision", "danger", "emergency", "leaking"]):
+            preferred_tags = ["danger_signs"]
+        elif any(kw in query_lower for kw in ["contraceptive", "contraception", "postpartum family planning", "condom", "iud", "implants", "birth control"]):
+            preferred_tags = ["contraception"]
+        elif any(kw in query_lower for kw in ["termination", "abortion", "options", "pregnancy options"]):
+            preferred_tags = ["options"]
+        elif any(kw in query_lower for kw in ["backpain", "back pain", "fatigue", "swelling", "symptoms", "appointment", "anc", "schedule", "visit"]):
+            preferred_tags = ["antenatal_care"]
 
         if branch == "pregnancy_care" and not preferred_tags:
             preferred_tags = ["antenatal_care", "nutrition"]
         elif branch == "whats_right_for_me" and not preferred_tags:
-            preferred_tags = ["options", "contraception"]
+            preferred_tags = ["options"]
 
-        retrieved_chunks = []
-        unique_sources = set()
+        raw_candidates = []
 
         # Case A: TF-IDF Vector Engine (Low RAM / Render Free Tier)
         if self.tfidf_vectorizer is not None and self.doc_embeddings is not None:
             q_vec = self.tfidf_vectorizer.transform([search_query])
             sim_scores = cosine_similarity(q_vec, self.doc_embeddings)[0]
 
-            candidates = []
             for idx, doc in enumerate(self.documents):
                 raw_sim = float(sim_scores[idx])
                 calibrated_sim = min(1.0, raw_sim / 0.35)
 
                 if preferred_tags and doc["topic_tag"] in preferred_tags:
                     soft_boosted_sim = min(1.0, calibrated_sim * 1.35)
+                elif preferred_tags and doc["topic_tag"] not in preferred_tags:
+                    soft_boosted_sim = calibrated_sim * 0.30
                 else:
                     soft_boosted_sim = calibrated_sim
 
-                candidates.append((soft_boosted_sim, doc))
-
-            candidates.sort(key=lambda x: x[0], reverse=True)
-            top_candidates = candidates[:top_k]
-
-            for score, doc in top_candidates:
-                retrieved_chunks.append({
-                    "text": doc["text"],
-                    "source": doc["source"],
-                    "topic_tag": doc["topic_tag"],
-                    "similarity": score
-                })
-                unique_sources.add(doc["source"])
+                raw_candidates.append((soft_boosted_sim, doc))
 
         # Case B: SentenceTransformer Engine (High RAM / Local / HF Spaces)
         elif self.model and self.doc_embeddings:
@@ -245,7 +235,6 @@ class LocalRAGEngine:
             q_emb = self.model.encode([expanded_query], normalize_embeddings=True)[0]
             q_emb = np.array(q_emb, dtype=np.float32)
 
-            candidates = []
             for idx, doc in enumerate(self.documents):
                 d_emb = self.doc_embeddings[idx]
                 raw_sim = float(np.dot(q_emb, d_emb))
@@ -253,22 +242,40 @@ class LocalRAGEngine:
 
                 if preferred_tags and doc["topic_tag"] in preferred_tags:
                     soft_boosted_sim = min(1.0, calibrated_sim * 1.35)
+                elif preferred_tags and doc["topic_tag"] not in preferred_tags:
+                    soft_boosted_sim = calibrated_sim * 0.30
                 else:
                     soft_boosted_sim = calibrated_sim * 0.70
 
-                candidates.append((soft_boosted_sim, doc))
+                raw_candidates.append((soft_boosted_sim, doc))
 
-            candidates.sort(key=lambda x: x[0], reverse=True)
-            top_candidates = candidates[:top_k]
+        raw_candidates.sort(key=lambda x: x[0], reverse=True)
 
-            for score, doc in top_candidates:
-                retrieved_chunks.append({
-                    "text": doc["text"],
-                    "source": doc["source"],
-                    "topic_tag": doc["topic_tag"],
-                    "similarity": score
-                })
-                unique_sources.add(doc["source"])
+        # Single-Topic Enforcement: Filter top candidates to avoid merging unrelated WHO sources
+        retrieved_chunks = []
+        unique_sources = set()
+
+        # Enforce min similarity threshold (0.55)
+        filtered_candidates = [c for c in raw_candidates if c[0] >= min_similarity]
+        if not filtered_candidates and raw_candidates:
+            # If highest score cleared 0.40, use top 1
+            if raw_candidates[0][0] >= 0.40:
+                filtered_candidates = [raw_candidates[0]]
+
+        if filtered_candidates:
+            primary_topic = filtered_candidates[0][1]["topic_tag"]
+            for score, doc in filtered_candidates:
+                # Include chunk if it matches primary topic or preferred tags, and don't mix unrelated topics
+                if doc["topic_tag"] == primary_topic or (preferred_tags and doc["topic_tag"] in preferred_tags):
+                    retrieved_chunks.append({
+                        "text": doc["text"],
+                        "source": doc["source"],
+                        "topic_tag": doc["topic_tag"],
+                        "similarity": score
+                    })
+                    unique_sources.add(doc["source"])
+                    if len(retrieved_chunks) >= top_k:
+                        break
 
         # Case C: Fallback Keyword Search if no vector match
         if not retrieved_chunks and self.documents:

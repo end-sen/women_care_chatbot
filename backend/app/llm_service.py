@@ -1,5 +1,7 @@
 import os
 import time
+import json
+import re
 from typing import List, Dict, Any, Tuple
 from dotenv import load_dotenv
 
@@ -236,11 +238,16 @@ SYSTEM_PROMPT = """You are MaternityCare AI, an empathetic, calm, non-judgmental
 TARGET RESPONSE LANGUAGE INSTRUCTION:
 You MUST generate your entire response in {language_name}. All text, greetings, explanations, bullet points, and source tags MUST be composed fluently in {language_name}.
 
+CRITICAL CLINICAL SAFETY RULE — NO DRUG NAMES OR DOSAGE INSTRUCTIONS:
+- You must NEVER output specific medication names (such as Mifepristone, Misoprostol, Methotrexate, etc.), exact drug dosages (e.g., 200mg, 400µg, 800mcg, pill counts), step-by-step drug administration sequences, or specific timing intervals (e.g. "24-48 hours later").
+- For any medical procedures or medication options (including medication abortion), describe them ONLY in general, high-level, non-instructional terms (e.g., "Medication abortion involves WHO-approved prescription medications taken under a licensed healthcare provider's supervision. Your provider will determine if this option is suitable for you and guide you on the exact procedure.").
+- Always direct the user to a licensed healthcare provider for actual clinical protocol details.
+
 TONE AND CONTENT RULES — ALWAYS FOLLOW THESE:
 1. NEUTRAL & CALM OPENING: Never open with congratulations, celebration, alarm, or judgment. Stay calm, respectful, and neutral by default (e.g., when a user states they tested positive or missed a period).
-2. PRESENT BOTH PATHS NEUTRALLY: For any pregnancy-related or options query, always present BOTH:
-   - Continuing the pregnancy information: antenatal care schedule (minimum 8 WHO contacts), daily folic acid (400 µg), nutrition, and booking a first clinical appointment.
-   - Next-step options if the user does not wish to continue: name abortion/termination directly and factually (e.g., "If you do not wish to continue the pregnancy, abortion is an option — discuss timing, safety, and legal availability in your region with a licensed healthcare provider"). Note that legal availability and access vary by region.
+2. PRESENT BOTH PATHS NEUTRALLY IN GENERAL TERMS: For any pregnancy-related or options query, always present BOTH:
+   - Continuing the pregnancy information: antenatal care schedule (minimum 8 WHO contacts), daily folic acid, nutrition, and booking a first clinical appointment.
+   - Next-step options if the user does not wish to continue: name abortion/termination directly and factually in general terms (e.g., "If you do not wish to continue the pregnancy, options include medication abortion or clinical procedures under a provider's supervision. A licensed healthcare provider can discuss timing, safety, and legal availability in your region."). Note that legal availability and access vary by region.
 3. DO NOT MAKE DECISIONS: Do not tell the user what they should do or imply a preference. Present all paths with dignity and privacy.
 4. STRUCTURAL FORMAT: Use clear, clean sections:
    - Neutral opening acknowledging the user's message
@@ -259,6 +266,27 @@ WHO Medical Context (Optional Enhancement Layer):
 
 Target Language: {language_name}
 """
+
+def sanitize_clinical_protocols(text: str) -> str:
+    """
+    Final post-processing safety guardrail to ensure NO raw medication names,
+    dosages, pill counts, or timing sequences are output to the user.
+    Replaces clinical instructions with general non-instructional guidance.
+    """
+    if not text:
+        return text
+
+    drug_names = ["mifepristone", "misoprostol", "methotrexate", "oxytocin", "mfe/miso"]
+    cleaned = text
+    for drug in drug_names:
+        cleaned = re.sub(rf'\b{drug}\b', "prescription medication (under licensed medical supervision)", cleaned, flags=re.IGNORECASE)
+
+    cleaned = re.sub(r'\b\d+\s*(?:mg|mcg|µg|ug|micrograms|milligrams)\b', "a provider-prescribed dosage", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'\b\d+\s+(?:pills|tablets)\b', "prescribed tablets", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'\b\d{1,2}[-–]\d{1,2}\s*hours\s*later\b', "as directed by your doctor", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'\b\d{1,2}\s*hours\s*later\b', "as directed by your doctor", cleaned, flags=re.IGNORECASE)
+
+    return cleaned
 
 def generate_grounded_response(
     user_message: str,
@@ -320,6 +348,9 @@ def generate_grounded_response(
             cleaned_answer = re.sub(r'<think>.*?(?:</think>|$)', '', answer, flags=re.DOTALL).strip()
             
             if cleaned_answer:
+                # Apply clinical protocol safety sanitizer
+                cleaned_answer = sanitize_clinical_protocols(cleaned_answer)
+
                 # Add WHO grounding citation ONLY if relevant WHO sources matched
                 if used_sources and not any(s in cleaned_answer for s in used_sources):
                     cleaned_answer += f"\n\nSource: {', '.join(used_sources)}"
