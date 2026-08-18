@@ -33,7 +33,7 @@ export default function AboutDemoModal({ isOpen, onClose }) {
             <Info className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-emerald-200">About MaternityCare AI Demo</h3>
+            <h3 className="text-lg font-bold text-emerald-200">About AmaniCare AI Demo</h3>
             <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
               <Calendar className="w-3.5 h-3.5 text-emerald-400" />
               <span>Guidance Last Updated: <strong className="text-emerald-300">{metadata?.last_updated || 'August 2026'}</strong></span>

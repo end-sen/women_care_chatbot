@@ -323,7 +323,7 @@ export default function AvatarCanvas({ isSpeaking = false, theme = 'dark' }) {
           }`}
         >
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span>Live 3D Rigged Avatar</span>
+          <span>Naina — 3D Avatar</span>
         </div>
 
         {isSpeaking && (
@@ -354,10 +354,10 @@ export default function AvatarCanvas({ isSpeaking = false, theme = 'dark' }) {
           <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center z-10">
             <img
               src={AVATAR_IMAGE_URL}
-              alt="Maternal Health Guide Avatar"
+              alt="Naina Avatar"
               className="w-44 h-44 rounded-full object-cover border-4 border-purple-500/50 shadow-2xl mb-3"
             />
-            <h3 className={`font-bold ${isLight ? 'text-purple-950' : 'text-purple-200'}`}>Utopia Women Guide</h3>
+            <h3 className={`font-bold ${isLight ? 'text-purple-950' : 'text-purple-200'}`}>Naina — AmaniCare Guide</h3>
           </div>
         ) : (
           <Canvas

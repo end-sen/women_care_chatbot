@@ -10,9 +10,11 @@ export default function ConsentModal({ isOpen, onAgree }) {
         
         {/* Header Branding */}
         <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-amber-500 via-amber-600 to-emerald-500 flex items-center justify-center shadow-lg shadow-amber-500/20 shrink-0">
-            <HeartHandshake className="w-6 h-6 text-slate-950 font-bold" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="AmaniCare Logo"
+            className="w-12 h-12 object-contain drop-shadow-md rounded-full shrink-0"
+          />
           <div>
             <h2 className="text-xl font-bold text-amber-200">Terms & Conditions & Consent</h2>
             <p className="text-xs text-slate-400">Please review and accept the terms & privacy policy to continue</p>

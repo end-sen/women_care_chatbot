@@ -83,8 +83,8 @@ export default function App() {
 
   const userName = getUserGreeting();
   const defaultWelcomeMsg = userName
-    ? `Jambo ${userName} & Welcome to MaternityCare! I am your AI maternal health companion. All guidance provided is strictly grounded in WHO medical guidelines.\n\nPlease select one of the care options below to begin:`
-    : "Jambo & Welcome to MaternityCare! I am your AI maternal health companion. All guidance provided is strictly grounded in WHO medical guidelines.\n\nPlease select one of the care options below to begin:";
+    ? `Welcome ${userName} to AmaniCare! I am Naina, your AI maternal health companion. All guidance provided is strictly grounded in WHO medical guidelines.\n\nPlease select one of the care options below to begin:`
+    : "Welcome to AmaniCare! I am Naina, your AI maternal health companion. All guidance provided is strictly grounded in WHO medical guidelines.\n\nPlease select one of the care options below to begin:";
 
   const [messages, setMessages] = useState(() => {
     const saved = sessionStorage.getItem('maternity_chat_messages');
@@ -215,7 +215,7 @@ export default function App() {
     setHealthStatus(null);
     setActiveTopic(null);
     
-    const welcomeMsg = "Conversation history cleared. Jambo & Welcome back to MaternityCare! Please choose a care path below to begin:";
+    const welcomeMsg = "Conversation history cleared. Welcome back to AmaniCare! Please choose a care path below to begin:";
     setMessages([
       {
         sender: 'bot',
@@ -318,7 +318,7 @@ export default function App() {
 
     } catch (err) {
       console.error('API Error:', err);
-      const errorMsg = "I encountered a temporary connection issue. Please ensure the MaternityCare backend server is running.";
+      const errorMsg = "I encountered a temporary connection issue. Please ensure the AmaniCare backend server is running.";
       setMessages((prev) => [
         ...prev,
         {
@@ -361,62 +361,96 @@ export default function App() {
 
   return (
     <div
-      className={`h-screen w-screen flex flex-col transition-colors duration-300 overflow-hidden ${
-        isLight ? 'bg-[#fcf9f5] text-purple-950' : 'bg-[#0b0e14] text-slate-100'
+      className={`min-h-screen w-screen flex flex-col justify-between transition-colors duration-300 overflow-x-hidden ${
+        isLight ? 'bg-[#f8f5f1] text-purple-950 p-2 sm:p-4 lg:p-6' : 'bg-[#0b0e14] text-slate-100 p-2 sm:p-4'
       }`}
     >
-      {/* 1. Top Navigation & Disclaimer Header */}
-      <DisclaimerHeader
-        theme={theme}
-        onToggleTheme={handleToggleTheme}
-        soundEnabled={soundEnabled}
-        onToggleSound={() => {
-          const nextState = !soundEnabled;
-          setSoundEnabled(nextState);
-          if (!nextState && 'speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            setIsAvatarSpeaking(false);
-          }
-        }}
-        speechLanguage={speechLanguage}
-        onChangeSpeechLanguage={setSpeechLanguage}
-        speechVoiceURI={speechVoiceURI}
-        onChangeSpeechVoiceURI={setSpeechVoiceURI}
-        onOpenFacilities={() => handleOpenFacilities('all')}
-        onResetSession={handleClearConversation}
-        onOpenEscalation={() => setIsEscalationModalOpen(true)}
-        onOpenAboutDemo={() => setIsAboutDemoOpen(true)}
-      />
+      {/* Shell Container matching screenshot */}
+      <div className={`max-w-7xl w-full mx-auto rounded-[32px] shadow-2xl border overflow-hidden flex flex-col transition-colors duration-300 ${
+        isLight ? 'bg-white border-purple-100/60' : 'bg-[#0f141c] border-purple-500/20'
+      }`}>
+        {/* 1. Top Navigation & Header */}
+        <DisclaimerHeader
+          theme={theme}
+          onToggleTheme={handleToggleTheme}
+          soundEnabled={soundEnabled}
+          onToggleSound={() => {
+            const nextState = !soundEnabled;
+            setSoundEnabled(nextState);
+            if (!nextState && 'speechSynthesis' in window) {
+              window.speechSynthesis.cancel();
+              setIsAvatarSpeaking(false);
+            }
+          }}
+          speechLanguage={speechLanguage}
+          onChangeSpeechLanguage={setSpeechLanguage}
+          speechVoiceURI={speechVoiceURI}
+          onChangeSpeechVoiceURI={setSpeechVoiceURI}
+          onOpenFacilities={() => handleOpenFacilities('all')}
+          onResetSession={handleClearConversation}
+          onOpenEscalation={() => setIsEscalationModalOpen(true)}
+          onOpenAboutDemo={() => setIsAboutDemoOpen(true)}
+          activeNavTab={activeNavTab}
+          setActiveNavTab={setActiveNavTab}
+        />
 
-      {/* 2. Main Viewport Grid */}
-      <main className="flex-1 min-h-0 max-w-7xl w-full mx-auto p-2.5 sm:p-4 grid grid-cols-1 lg:grid-cols-12 gap-3.5 overflow-y-auto lg:overflow-hidden pb-16 lg:pb-4">
-        
-        {/* Left Column: 3D Interactive Talking Avatar Viewport */}
-        <div className="lg:col-span-4 h-[320px] lg:h-full flex flex-col min-h-0">
-          <AvatarCanvas isSpeaking={isAvatarSpeaking || isTyping} theme={theme} />
-        </div>
+        {/* 2. Main Viewport Grid (Matches Screenshot 1:1) */}
+        <main className="p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start flex-1 min-h-0">
+          
+          {/* Left Column: Elder Maternal Guide Portrait & Headline (Screenshot Match) */}
+          <div className="lg:col-span-5 flex flex-col gap-4">
+            {/* Guide Portrait Card */}
+            <div className="rounded-3xl overflow-hidden shadow-lg border border-purple-100/80 aspect-[4/3] w-full relative bg-purple-50">
+              <img
+                src="/maternal_avatar.jpg"
+                alt="Elder Maternal Guide"
+                className="w-full h-full object-cover"
+              />
+            </div>
 
-        {/* Right Column: Main Chat & Guided Flow */}
-        <div className="lg:col-span-8 h-[580px] lg:h-full flex flex-col min-h-0 overflow-hidden">
-          <ChatContainer
-            messages={messages}
-            isTyping={isTyping}
-            inputValue={inputValue}
-            setInputValue={setInputValue}
-            onSendMessage={handleSendMessage}
-            branch={branch}
-            trimester={trimester}
-            gestationalStage={gestationalStage}
-            healthStatus={healthStatus}
-            activeTopic={activeTopic}
-            onQuickReplySelect={handleQuickReplySelect}
-            onOpenFacilities={handleOpenFacilities}
-            onOpenEscalation={() => setIsEscalationModalOpen(true)}
-            theme={theme}
-          />
-        </div>
+            {/* Greeting & Headline Section */}
+            <div className="space-y-1 px-1">
+              <div className="text-sm font-bold text-purple-700 flex items-center gap-1">
+                <span>Good Morning {userName || 'Mama'}!</span>
+                <span className="text-purple-600">♥</span>
+              </div>
 
-      </main>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-purple-950 font-heading leading-tight tracking-tight">
+                How can I help you today?
+              </h2>
+
+              <div className="w-10 h-1 bg-purple-500 rounded-full my-2.5"></div>
+
+              <p className="text-xs font-medium text-purple-800/80 leading-relaxed">
+                I'm here to support your pregnancy journey and women's health.
+              </p>
+            </div>
+          </div>
+
+          {/* Right Column: Main Chat Stream, Guided Options & Pill Input */}
+          <div className="lg:col-span-7 h-[580px] lg:h-full flex flex-col min-h-0 overflow-hidden">
+            <ChatContainer
+              messages={messages}
+              isTyping={isTyping}
+              inputValue={inputValue}
+              setInputValue={setInputValue}
+              onSendMessage={handleSendMessage}
+              branch={branch}
+              trimester={trimester}
+              gestationalStage={gestationalStage}
+              healthStatus={healthStatus}
+              activeTopic={activeTopic}
+              onQuickReplySelect={handleQuickReplySelect}
+              onOpenFacilities={handleOpenFacilities}
+              onOpenEscalation={() => setIsEscalationModalOpen(true)}
+              theme={theme}
+              speechLanguage={speechLanguage}
+              speechVoiceURI={speechVoiceURI}
+            />
+          </div>
+
+        </main>
+      </div>
 
       {/* 3. Bottom Mobile/Tablet App Navigation Bar (As shown in mockups) */}
       <nav

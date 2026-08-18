@@ -1,8 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Send, Bot, User, Sparkles, Loader2, ChevronDown, Plus, Mic, Heart, Sprout, Apple, ShieldAlert, MessageSquare } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Loader2, ChevronDown, Mic, MicOff, Heart, Volume2, VolumeX } from 'lucide-react';
 import SourceBadge from './SourceBadge';
 import SafetyAlertCard from './SafetyAlertCard';
 import QuickReplies from './QuickReplies';
+import { speakWithLanguage } from '../utils/voiceSynthesizer';
 
 function FormattedMessageText({ text, isLight }) {
   if (!text) return null;
@@ -112,14 +113,21 @@ export default function ChatContainer({
   onQuickReplySelect,
   onOpenFacilities,
   onOpenEscalation,
-  theme = 'dark'
+  theme = 'light',
+  speechLanguage = 'en-US',
+  speechVoiceURI = ''
 }) {
   const chatScrollRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   const [showScrollBottomBtn, setShowScrollBottomBtn] = useState(false);
   const [isUserScrolledUp, setIsUserScrolledUp] = useState(false);
+  const [playingMsgIdx, setPlayingMsgIdx] = useState(null);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
+
   const isLight = theme === 'light';
+  const hasUserMessaged = messages.some((m) => m.sender === 'user');
 
   const scrollToBottom = (behavior = 'smooth') => {
     if (chatScrollRef.current) {
@@ -163,162 +171,139 @@ export default function ChatContainer({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!inputValue.trim() || isTyping) return;
+    if (isListening && recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (_) {}
+      setIsListening(false);
+    }
     setIsUserScrolledUp(false);
     onSendMessage(inputValue);
     setInputValue('');
   };
 
-  // Quick Action Grid cards from the mockups
-  const quickGridActions = [
-    {
-      id: 'pregnancy_care',
-      title: 'Pregnancy Care',
-      icon: Heart,
-      color: isLight ? 'text-purple-600 bg-purple-100' : 'text-purple-400 bg-purple-950/80 border border-purple-500/30',
-      action: () => onQuickReplySelect({ type: 'choose_branch', value: 'pregnancy_care', label: 'Pregnancy Care' })
-    },
-    {
-      id: 'health_tips',
-      title: 'Health Tips',
-      icon: Sprout,
-      color: isLight ? 'text-emerald-600 bg-emerald-100' : 'text-emerald-400 bg-emerald-950/80 border border-emerald-500/30',
-      action: () => onSendMessage('What general maternal health tips and guidelines should I follow?', 'Health Tips')
-    },
-    {
-      id: 'nutrition_guide',
-      title: 'Nutrition Guide',
-      icon: Apple,
-      color: isLight ? 'text-purple-600 bg-purple-100' : 'text-orange-400 bg-orange-950/80 border border-orange-500/30',
-      action: () => onSendMessage('What vitamins, foods, and nutrition are recommended during pregnancy?', 'Nutrition Guide')
-    },
-    {
-      id: 'symptoms_check',
-      title: 'Symptoms Check',
-      icon: ShieldAlert,
-      color: isLight ? 'text-purple-600 bg-purple-100' : 'text-indigo-400 bg-indigo-950/80 border border-indigo-500/30',
-      action: () => onSendMessage('What common symptoms require medical attention during pregnancy?', 'Symptoms Check')
-    },
-    ...(!isLight
-      ? [
-          {
-            id: 'ask_anything',
-            title: 'Ask Anything',
-            icon: MessageSquare,
-            color: 'text-purple-300 bg-purple-900/60 border border-purple-500/30',
-            action: () => onQuickReplySelect({ type: 'choose_branch', value: 'whats_right_for_me', label: "What's Right For Me" })
-          }
-        ]
-      : [])
-  ];
+  // Audio Playback Speaker Button Handler
+  const handleTogglePlayMessage = (idx, text) => {
+    if (playingMsgIdx === idx) {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      setPlayingMsgIdx(null);
+    } else {
+      setPlayingMsgIdx(idx);
+      speakWithLanguage({
+        text,
+        soundEnabled: true,
+        langCode: speechLanguage || 'en-US',
+        voiceURI: speechVoiceURI || '',
+        onEnd: () => setPlayingMsgIdx(null),
+        onError: () => setPlayingMsgIdx(null)
+      });
+    }
+  };
+
+  // Speech-to-Text Voice Input Handler
+  const handleToggleListening = () => {
+    const SpeechRecognition = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
+    if (!SpeechRecognition) {
+      alert("Voice-to-text input is not supported in this browser. Please try Google Chrome, Edge, or Safari.");
+      return;
+    }
+
+    if (isListening) {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch (_) {}
+      }
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      const rec = new SpeechRecognition();
+      rec.continuous = false;
+      rec.interimResults = true;
+      rec.lang = speechLanguage || 'en-US';
+
+      rec.onstart = () => {
+        setIsListening(true);
+      };
+
+      rec.onresult = (e) => {
+        let transcript = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          transcript += e.results[i][0].transcript;
+        }
+        if (transcript) {
+          setInputValue(transcript);
+        }
+      };
+
+      rec.onerror = (err) => {
+        console.warn('Speech recognition error:', err);
+        setIsListening(false);
+      };
+
+      rec.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = rec;
+      rec.start();
+    } catch (err) {
+      console.error('Failed to start speech recognition:', err);
+      setIsListening(false);
+    }
+  };
 
   return (
-    <div
-      className={`w-full h-full flex flex-col rounded-3xl overflow-hidden shadow-2xl relative transition-colors duration-300 border ${
-        isLight
-          ? 'bg-white/80 border-purple-100 text-purple-950 shadow-purple-900/10'
-          : 'bg-[#0f141c]/90 border-purple-500/20 text-slate-100 backdrop-blur-md shadow-black/60'
-      }`}
-    >
-      {/* Messages & Hero Scroll Area */}
+    <div className="w-full h-full flex flex-col justify-between relative">
+      {/* Scrollable Messages Stream */}
       <div
         ref={chatScrollRef}
         onScroll={handleScroll}
-        className="flex-1 p-4 overflow-y-auto space-y-4 relative scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none]"
+        className="flex-1 overflow-y-auto space-y-4 pr-1 relative scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none]"
       >
-        {/* HERO BANNER SECTION (Matching light & dark theme uploaded mockups) */}
-        <div
-          className={`relative p-5 rounded-3xl overflow-hidden mb-2 transition-all ${
-            isLight
-              ? 'bg-gradient-to-r from-[#f7f2eb] via-[#f2e9df] to-[#ede2d6] border border-purple-200/60 text-purple-950 shadow-sm'
-              : 'bg-gradient-to-r from-[#171226] via-[#1b1730] to-[#121926] border border-purple-500/30 text-purple-100 shadow-xl'
-          }`}
-        >
-          {/* Elder Maternal Figure Graphic Overlay */}
-          <div className="absolute right-0 top-0 bottom-0 w-1/2 sm:w-2/5 overflow-hidden pointer-events-none opacity-90">
-            <img
-              src="/maternal_avatar.jpg"
-              alt="Maternal Health Guide"
-              className="w-full h-full object-cover object-top mask-radial"
-              style={{
-                maskImage: isLight
-                  ? 'linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)'
-                  : 'linear-gradient(to left, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)',
-                WebkitMaskImage: isLight
-                  ? 'linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)'
-                  : 'linear-gradient(to left, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)'
-              }}
-            />
-          </div>
-
-          <div className="relative z-10 max-w-[65%] sm:max-w-[60%] space-y-1.5">
-            <div className={`text-xs font-semibold tracking-wide ${isLight ? 'text-purple-700' : 'text-purple-300/80'}`}>
-              Good Morning {isLight ? <span className="font-bold text-purple-600">Anwash! ♥</span> : <span className="font-bold text-purple-400">Anwash!</span>}
-            </div>
-
-            <h2 className={`text-xl sm:text-2xl font-extrabold leading-tight ${isLight ? 'text-purple-950 font-heading' : 'text-white font-heading'}`}>
-              How can I help you today?
-            </h2>
-
-            {/* Subtle Pill Accent */}
-            <div className={`w-8 h-1 rounded-full ${isLight ? 'bg-purple-400' : 'bg-purple-500'}`}></div>
-
-            <p className={`text-xs leading-relaxed pt-1 ${isLight ? 'text-purple-800' : 'text-slate-300'}`}>
-              I'm here to support your pregnancy journey and women's health.
-            </p>
-
-            {/* Dark Theme Sub-Card (Image 2) */}
-            {!isLight && (
-              <div className="mt-3 p-2.5 rounded-2xl bg-purple-950/40 border border-purple-500/30 backdrop-blur-md flex items-center gap-2.5 shadow-lg">
-                <div className="w-8 h-8 rounded-xl bg-purple-600/30 border border-purple-400/40 flex items-center justify-center text-purple-300 shrink-0">
-                  <Sprout className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-purple-200">Utopian Women Maternal Health</div>
-                  <div className="text-[10px] text-purple-400">Care. Support. Utopia.</div>
-                </div>
-              </div>
-            )}
+        {/* Welcome Guide Bubble (Exact match to screenshot!) */}
+        <div className="flex items-start gap-3">
+          <img
+            src="/maternal_avatar.jpg"
+            alt="Elder Guide"
+            className="w-9 h-9 rounded-full object-cover border border-purple-200 shadow-sm shrink-0"
+          />
+          <div className="bg-[#f3e8ff] border border-purple-200/80 rounded-2xl rounded-tl-none px-4 py-3 text-purple-950 text-sm font-medium shadow-xs max-w-[85%] flex items-center justify-between gap-3">
+            <span>Welcome, dear! ♥</span>
+            <span className="flex gap-1 animate-pulse shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-600"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+            </span>
           </div>
         </div>
 
-        {/* CHAT MESSAGES STREAM */}
+        {/* Conversation Stream */}
         {messages.map((msg, idx) => {
           const isUser = msg.sender === 'user';
           return (
             <div key={idx} className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-              {/* Avatar Icon */}
               {!isUser ? (
-                <div className="relative shrink-0">
-                  <img
-                    src="/maternal_avatar.jpg"
-                    alt="Guide"
-                    className={`w-9 h-9 rounded-full object-cover border-2 shadow-md ${
-                      isLight ? 'border-purple-300' : 'border-purple-500/60'
-                    }`}
-                  />
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white"></span>
-                </div>
+                <img
+                  src="/maternal_avatar.jpg"
+                  alt="Naina Guide"
+                  className="w-9 h-9 rounded-full object-cover border border-purple-200 shadow-sm shrink-0"
+                />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-md font-bold text-xs">
+                <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-sm font-bold text-xs">
                   <User className="w-4 h-4" />
                 </div>
               )}
 
-              {/* Message Bubble */}
-              <div className={`max-w-[85%] sm:max-w-[78%] ${isUser ? 'items-end' : 'items-start'}`}>
+              <div className={`max-w-[85%] sm:max-w-[80%] ${isUser ? 'items-end' : 'items-start'}`}>
                 <div
-                  className={`p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed whitespace-pre-wrap shadow-md transition-all ${
+                  className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-xs transition-all ${
                     isUser
-                      ? isLight
-                        ? 'bg-purple-600 text-white rounded-tr-none'
-                        : 'bg-purple-900/60 border border-purple-500/40 text-purple-100 rounded-tr-none'
-                      : isLight
-                      ? 'bg-[#f3e8ff] text-[#581c87] rounded-tl-none border border-purple-200/80 font-medium'
-                      : 'bg-slate-900/80 border border-purple-500/20 text-slate-100 rounded-tl-none backdrop-blur-md'
+                      ? 'bg-purple-600 text-white rounded-tr-none'
+                      : 'bg-[#f3e8ff] text-[#4c1d95] rounded-tl-none border border-purple-200/80 font-medium'
                   }`}
                 >
                   <FormattedMessageText text={msg.text} isLight={isLight} />
-
                   {!isUser && msg.sources && msg.sources.length > 0 && <SourceBadge sources={msg.sources} />}
                 </div>
 
@@ -332,8 +317,34 @@ export default function ChatContainer({
                   />
                 )}
 
-                <div className={`text-[10px] ${isLight ? 'text-purple-400' : 'text-slate-500'} mt-1 px-1 ${isUser ? 'text-right' : 'text-left'}`}>
-                  {msg.time || 'Just now'}
+                {/* Audio Speaker Button */}
+                <div className={`flex items-center gap-2 mt-1.5 px-1 ${isUser ? 'justify-end' : 'justify-start'}`}>
+                  <button
+                    type="button"
+                    onClick={() => handleTogglePlayMessage(idx, msg.text)}
+                    title={playingMsgIdx === idx ? "Stop Audio" : "Listen to message"}
+                    className={`flex items-center gap-1 text-[11px] font-semibold transition px-2.5 py-0.5 rounded-full border ${
+                      playingMsgIdx === idx
+                        ? 'bg-purple-600 text-white border-purple-400 animate-pulse'
+                        : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
+                    }`}
+                  >
+                    {playingMsgIdx === idx ? (
+                      <>
+                        <VolumeX className="w-3.5 h-3.5 text-white" />
+                        <span>Stop</span>
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-3.5 h-3.5 text-purple-500" />
+                        <span>Listen</span>
+                      </>
+                    )}
+                  </button>
+
+                  <span className="text-[10px] text-purple-400">
+                    {msg.time || 'Just now'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -343,135 +354,139 @@ export default function ChatContainer({
         {/* Typing Indicator */}
         {isTyping && (
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-md">
-              <Bot className="w-4 h-4" />
-            </div>
-            <div
-              className={`p-3.5 rounded-2xl rounded-tl-none text-xs flex items-center gap-2 border ${
-                isLight ? 'bg-purple-50 border-purple-200 text-purple-900' : 'bg-slate-800/90 border-slate-700 text-slate-300'
-              }`}
-            >
+            <img
+              src="/maternal_avatar.jpg"
+              alt="Naina Guide"
+              className="w-8 h-8 rounded-full object-cover border border-purple-200 shadow-sm shrink-0"
+            />
+            <div className="p-3.5 rounded-2xl rounded-tl-none text-xs flex items-center gap-2 border bg-purple-50 border-purple-200 text-purple-900">
               <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-500" />
-              <span>MaternityCare AI is retrieving WHO guidelines...</span>
+              <span>AmaniCare AI is retrieving WHO guidelines...</span>
             </div>
           </div>
         )}
 
-        {/* QUICK ACTION GRID CARDS (From Mockups) */}
-        <div className="my-3 space-y-2">
-          <div className={`grid ${isLight ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-5'} gap-2.5`}>
-            {quickGridActions.map((card) => {
-              const IconComp = card.icon;
-              return (
-                <button
-                  key={card.id}
-                  onClick={card.action}
-                  className={`flex flex-col items-center justify-center p-3 rounded-2xl transition hover:scale-[1.03] active:scale-[0.98] shadow-sm text-center ${
-                    isLight
-                      ? 'bg-white border border-purple-100 hover:border-purple-300 text-purple-950'
-                      : 'bg-slate-900/60 border border-purple-500/20 hover:border-purple-500/50 text-slate-100 backdrop-blur-md'
-                  }`}
-                >
-                  <div className={`p-2.5 rounded-xl mb-1.5 font-bold ${card.color}`}>
-                    <IconComp className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-bold leading-tight">{card.title}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* VOICE AI ASSISTANT GLOWING ORB (Dark Theme / Voice Active) */}
-        {(!isLight || isTyping) && (
-          <div className="my-4 flex flex-col items-center justify-center py-2">
-            <div className="relative w-16 h-16 rounded-full flex items-center justify-center bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-500 animate-orb-glow cursor-pointer transition hover:scale-105">
-              <div className="w-12 h-12 rounded-full bg-[#0d111a] flex items-center justify-center border border-purple-400/50">
-                <Sparkles className="w-6 h-6 text-purple-300 animate-pulse" />
+        {/* Middle 2 Side-by-Side Care Path Cards (Matches Screenshot 1:1) */}
+        {branch === 'initial' && !activeTopic && !hasUserMessaged && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-4">
+            {/* Card 1: Maternal Care */}
+            <button
+              onClick={() => onQuickReplySelect({ type: 'choose_branch', value: 'pregnancy_care', label: 'Pregnancy Care' })}
+              className="bg-white border-2 border-purple-200 hover:border-purple-400 rounded-2xl p-5 shadow-xs text-left transition hover:scale-[1.02] cursor-pointer flex flex-col justify-between group"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 mb-3 shadow-xs">
+                  <Heart className="w-5 h-5 fill-purple-600/20" />
+                </div>
+                <div className="font-bold text-sm text-purple-950">Maternal Care</div>
+                <div className="text-xs text-purple-500 font-semibold mt-1 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                  Explore guidance →
+                </div>
               </div>
-            </div>
+            </button>
+
+            {/* Card 2: Explore What's Right for You */}
+            <button
+              onClick={() => onQuickReplySelect({ type: 'choose_branch', value: 'whats_right_for_me', label: "What's Right For Me" })}
+              className="bg-white border border-purple-100 hover:border-purple-300 rounded-2xl p-5 shadow-xs text-left transition hover:scale-[1.02] cursor-pointer flex flex-col justify-between group"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 mb-3 shadow-xs">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div className="font-bold text-sm text-purple-950">Explore What's Right for You</div>
+                <div className="text-xs text-purple-500 font-semibold mt-1 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                  Discover recommendations →
+                </div>
+              </div>
+            </button>
           </div>
         )}
 
-        {/* Inline Guided Options */}
-        <QuickReplies
-          branch={branch}
-          trimester={trimester}
-          gestationalStage={gestationalStage}
-          healthStatus={healthStatus}
-          activeTopic={activeTopic}
-          onSelect={onQuickReplySelect}
-          onOpenFacilities={onOpenFacilities}
-          theme={theme}
-        />
+        {/* Guided Topics (Rendered dynamically when exploring branches) */}
+        {branch !== 'initial' && (
+          <QuickReplies
+            branch={branch}
+            trimester={trimester}
+            gestationalStage={gestationalStage}
+            healthStatus={healthStatus}
+            activeTopic={activeTopic}
+            onSelect={onQuickReplySelect}
+            onOpenFacilities={onOpenFacilities}
+            theme={theme}
+          />
+        )}
 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Floating Jump to Bottom Button */}
+      {/* Floating Scroll Bottom */}
       {showScrollBottomBtn && (
         <button
           onClick={() => {
             setIsUserScrolledUp(false);
             scrollToBottom('smooth');
           }}
-          className={`absolute bottom-16 right-5 z-20 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-bold text-xs shadow-xl transition animate-bounce border ${
-            isLight
-              ? 'bg-purple-600 text-white border-purple-400'
-              : 'bg-purple-600 text-white border-purple-400'
-          }`}
+          className="absolute bottom-16 right-5 z-20 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-bold text-xs shadow-xl transition animate-bounce border bg-purple-600 text-white border-purple-400"
         >
           <ChevronDown className="w-4 h-4" />
           <span>Latest Messages</span>
         </button>
       )}
 
-      {/* PILL INPUT BAR (Exact match to uploaded Light & Dark mockups!) */}
-      <form onSubmit={handleSubmit} className={`p-3 transition-colors duration-300 border-t ${isLight ? 'bg-white border-purple-100' : 'bg-[#0b0e14] border-purple-500/20'}`}>
+      {/* Voice Listening Active Banner */}
+      {isListening && (
+        <div className="px-4 py-1.5 bg-red-600/90 text-white text-xs font-bold flex items-center justify-between border-t border-red-400 animate-pulse z-10 rounded-xl my-1">
+          <span className="flex items-center gap-2">
+            <Mic className="w-4 h-4 animate-bounce" />
+            <span>Voice-to-Text Active: Speak your question now...</span>
+          </span>
+          <button
+            type="button"
+            onClick={handleToggleListening}
+            className="text-[10px] underline bg-black/20 px-2 py-0.5 rounded"
+          >
+            Click to Stop
+          </button>
+        </div>
+      )}
+
+      {/* Pill Input Bar (Exact match to screenshot!) */}
+      <form onSubmit={handleSubmit} className="pt-3 bg-transparent">
         <div
-          className={`flex items-center gap-2 rounded-full px-3.5 py-1.5 transition-all shadow-md ${
-            isLight
-              ? 'bg-white border border-purple-200 hover:border-purple-400 focus-within:border-purple-600'
-              : 'bg-slate-900/80 border border-purple-500/30 hover:border-purple-500/60 focus-within:border-purple-400 backdrop-blur-md'
+          className={`flex items-center gap-3 rounded-full px-4 py-2.5 transition-all shadow-md ${
+            isListening
+              ? 'bg-red-950/20 border-2 border-red-500 ring-2 ring-red-500/30'
+              : 'bg-white border border-purple-200 hover:border-purple-400 focus-within:border-purple-600'
           }`}
         >
-          {/* Left Icon: Sparkles in Light, Plus in Dark */}
-          <div className="shrink-0">
-            {isLight ? (
-              <Sparkles className="w-5 h-5 text-purple-500" />
-            ) : (
-              <button type="button" className="p-1 text-slate-400 hover:text-purple-300 transition">
-                <Plus className="w-5 h-5" />
-              </button>
-            )}
-          </div>
+          <Sparkles className="w-5 h-5 text-purple-400 shrink-0" />
 
           <input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Ask me anything..."
-            className={`flex-1 bg-transparent border-none py-2 text-xs sm:text-sm focus:outline-none ${
-              isLight ? 'text-purple-950 placeholder-purple-400' : 'text-slate-100 placeholder-slate-400'
-            }`}
+            placeholder={isListening ? "Listening... speak now" : "Ask me anything..."}
+            className="flex-1 bg-transparent border-none outline-none text-sm text-purple-950 placeholder-purple-300 font-medium"
           />
 
-          {/* Microphone Icon in Dark Theme Input */}
-          {!isLight && (
-            <button type="button" className="p-1 text-slate-400 hover:text-purple-300 transition shrink-0">
-              <Mic className="w-4 h-4" />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={handleToggleListening}
+            title={isListening ? "Stop voice listening" : "Speak message (Voice-to-Text)"}
+            className={`p-2 rounded-full transition flex items-center justify-center shrink-0 ${
+              isListening
+                ? 'bg-red-600 text-white animate-pulse'
+                : 'text-purple-400 hover:text-purple-600'
+            }`}
+          >
+            {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+          </button>
 
-          {/* Send Button */}
           <button
             type="submit"
             disabled={!inputValue.trim() || isTyping}
-            className={`w-9 h-9 rounded-full flex items-center justify-center text-white disabled:opacity-40 disabled:cursor-not-allowed transition shrink-0 shadow-md ${
-              isLight
-                ? 'bg-purple-600 hover:bg-purple-700'
-                : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 shadow-purple-600/40'
-            }`}
+            className="w-10 h-10 rounded-full bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center shadow-lg shadow-purple-600/30 disabled:opacity-40 transition shrink-0"
           >
             <Send className="w-4 h-4" />
           </button>
@@ -480,4 +495,3 @@ export default function ChatContainer({
     </div>
   );
 }
-
