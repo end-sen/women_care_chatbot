@@ -18,10 +18,8 @@ FALLBACK_MODELS = [
     os.getenv("GROQ_MODEL", "groq/compound-mini"),
     "groq/compound-mini",
     "qwen/qwen3.6-27b",
-    "openai/gpt-oss-120b",
     "openai/gpt-oss-20b",
-    "groq/compound",
-    "allam-2-7b"
+    "groq/compound"
 ]
 
 def call_groq_with_retry(messages: list, model: str = None, temperature: float = 0.2, max_tokens: int = 500, max_retries: int = 1) -> str:
@@ -53,7 +51,7 @@ def call_groq_with_retry(messages: list, model: str = None, temperature: float =
                 last_err = e
                 err_msg = str(e).lower()
                 print(f"[LLM Service] Groq model '{target_model}' attempt {attempt + 1} failed: {e}")
-                if "model_not_found" in err_msg or "404" in err_msg or "does not exist" in err_msg:
+                if any(err_kw in err_msg for err_kw in ["model_not_found", "404", "does not exist", "429", "rate_limit", "rate limit", "decommissioned", "400"]):
                     break  # Immediately try next model in fallback list
                 if attempt < max_retries:
                     time.sleep(1)
@@ -289,12 +287,14 @@ def generate_grounded_response(
                 ],
                 model="groq/compound-mini",
                 temperature=0.2,
-                max_tokens=600,
+                max_tokens=900,
                 max_retries=2
             )
-            # Strip reasoning tags <think>...</think> if reasoning model output contains thought process
-            cleaned_answer = re.sub(r'<think>.*?</think>', '', answer, flags=re.DOTALL).strip()
-            return cleaned_answer, used_sources
+            # Strip reasoning tags <think>...</think> including unclosed <think>... if max_tokens cut off </think>
+            cleaned_answer = re.sub(r'<think>.*?(?:</think>|$)', '', answer, flags=re.DOTALL).strip()
+            if cleaned_answer:
+                return cleaned_answer, used_sources
+            print("[LLM Service] Answer was empty after stripping reasoning tags. Falling back to local WHO document synthesis.")
         except Exception as e:
             print(f"[LLM Service] Groq API response generation failed: {e}. Falling back to local WHO document synthesis.")
 
