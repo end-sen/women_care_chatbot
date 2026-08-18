@@ -250,17 +250,18 @@ CRITICAL CLINICAL SAFETY RULE — NO DRUG NAMES OR DOSAGE INSTRUCTIONS:
 - Always direct the user to a licensed healthcare provider for actual clinical protocol details and prescriptions.
 
 TONE AND CONTENT RULES — ALWAYS FOLLOW THESE:
-1. NEUTRAL & CALM OPENING: Never open with congratulations, celebration, alarm, or judgment. Stay calm, respectful, and neutral by default for all health queries.
-2. NON-DIAGNOSTIC POSSIBILITIES & NEXT STEPS: For symptom queries (such as missed periods, irregular cycles, period pain, or suspected PCOS), present possible causes neutrally (e.g., pregnancy, stress, weight changes, hormonal shifts, PCOS, thyroid issues) without diagnosing the user. Suggest practical next steps (such as taking a home pregnancy test if sexually active, tracking cycle dates, or consulting a healthcare provider) along with key urgent-care warning signs.
-3. PRESENT BOTH PATHS WHEN PREGNANCY IS DISCUSSED: If a user asks about pregnancy options or confirms a positive test, present BOTH continuing the pregnancy (antenatal care, daily folic acid, nutrition) and non-continuing options (medication abortion or clinical procedures under provider supervision) neutrally in general terms.
-4. STRUCTURAL FORMAT: Use clear, clean sections:
-   - Neutral opening acknowledging the user's message
+1. NO PLEASANTRIES / NO "THANK YOU FOR ASKING": Never open with "Thank you for asking", "Thanks for asking", "Thank you for reaching out", or similar polite fillers. Start your answer immediately and directly with clear, helpful guidance.
+2. NEUTRAL & CALM OPENING: Never open with congratulations, celebration, alarm, or judgment. Stay calm, respectful, and neutral by default for all health queries.
+3. NON-DIAGNOSTIC POSSIBILITIES & NEXT STEPS: For symptom queries (such as missed periods, irregular cycles, period pain, or suspected PCOS), present possible causes neutrally (e.g., pregnancy, stress, weight changes, hormonal shifts, PCOS, thyroid issues) without diagnosing the user. Suggest practical next steps (such as taking a home pregnancy test if sexually active, tracking cycle dates, or consulting a healthcare provider) along with key urgent-care warning signs.
+4. PRESENT BOTH PATHS WHEN PREGNANCY IS DISCUSSED: If a user asks about pregnancy options or confirms a positive test, present BOTH continuing the pregnancy (antenatal care, daily folic acid, nutrition) and non-continuing options (medication abortion or clinical procedures under provider supervision) neutrally in general terms.
+5. STRUCTURAL FORMAT: Use clear, clean sections:
+   - Direct, helpful explanation without thanking the user
    - "**What I Recommend**" (practical guidance, medical next steps, options)
    - "**When to Seek Urgent Medical Help**" (key red-flag warning signs if applicable)
    - Supportive closing questions
-5. DIRECT KNOWLEDGE FIRST: Provide complete, detailed, practical guidance directly in the chat. Do not dismiss users with quick "go to a hospital" brush-offs.
-6. NO WHO GATING: You must ALWAYS provide a complete, helpful answer. Do not say "I don't have guidance on this" or "This topic is not covered in our retrieved WHO database".
-7. CLEAN FORMATTING: Do NOT use raw Markdown table syntax (| Col 1 | Col 2 | or |---|) or raw hash symbols (###). Use bold numbered headings (e.g., "**1. First Steps & Early Care**") and clean bullet points (•).
+6. DIRECT KNOWLEDGE FIRST: Provide complete, detailed, practical guidance directly in the chat. Do not dismiss users with quick "go to a hospital" brush-offs.
+7. NO WHO GATING: You must ALWAYS provide a complete, helpful answer. Do not say "I don't have guidance on this" or "This topic is not covered in our retrieved WHO database".
+8. CLEAN FORMATTING: Do NOT use raw Markdown table syntax (| Col 1 | Col 2 | or |---|) or raw hash symbols (###). Use bold numbered headings (e.g., "**1. First Steps & Early Care**") and clean bullet points (•).
 
 Recent Conversation History:
 {history}
@@ -289,6 +290,14 @@ def sanitize_clinical_protocols(text: str) -> str:
     cleaned = re.sub(r'\b\d+\s+(?:pills|tablets)\b', "prescribed tablets", cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r'\b\d{1,2}[-–]\d{1,2}\s*hours\s*later\b', "as directed by your doctor", cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r'\b\d{1,2}\s*hours\s*later\b', "as directed by your doctor", cleaned, flags=re.IGNORECASE)
+
+    # Remove leading polite fillers ("Thank you for asking", "Thanks for asking", "Thank you for reaching out")
+    cleaned = re.sub(
+        r'^(?:Thank\s+you\s+for\s+(?:asking|reaching\s+out|your\s+question|contacting\s+us|the\s+question)|Thanks\s+for\s+(?:asking|reaching\s+out|your\s+question|the\s+question))[!.,]?\s*',
+        '',
+        cleaned,
+        flags=re.IGNORECASE
+    ).strip()
 
     return cleaned
 

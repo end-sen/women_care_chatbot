@@ -140,6 +140,8 @@ export default function ChatContainer({
     }
   };
 
+  const messageRefs = useRef({});
+
   const handleScroll = () => {
     if (!chatScrollRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = chatScrollRef.current;
@@ -148,25 +150,12 @@ export default function ChatContainer({
     setIsUserScrolledUp(!isNearBottom);
   };
 
+  // Scroll to active message during voice playback or new prompt selection
   useEffect(() => {
-    if (!isUserScrolledUp) {
-      scrollToBottom('smooth');
+    if (playingMsgIdx !== null && messageRefs.current[playingMsgIdx]) {
+      messageRefs.current[playingMsgIdx].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
-  }, [messages, isTyping, activeTopic, branch, trimester, gestationalStage, healthStatus]);
-
-  useEffect(() => {
-    const container = chatScrollRef.current;
-    if (!container) return;
-
-    const observer = new ResizeObserver(() => {
-      if (!isUserScrolledUp) {
-        scrollToBottom('auto');
-      }
-    });
-
-    observer.observe(container);
-    return () => observer.disconnect();
-  }, [isUserScrolledUp]);
+  }, [playingMsgIdx]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -282,7 +271,7 @@ export default function ChatContainer({
         {messages.map((msg, idx) => {
           const isUser = msg.sender === 'user';
           return (
-            <div key={idx} className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+            <div key={idx} ref={(el) => (messageRefs.current[idx] = el)} className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
               {!isUser ? (
                 <img
                   src="/maternal_avatar.jpg"
