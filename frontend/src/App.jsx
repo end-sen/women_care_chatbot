@@ -54,13 +54,14 @@ export default function App() {
     localStorage.setItem('maternity_speech_voice_uri', speechVoiceURI);
   }, [speechVoiceURI]);
 
+  // Ensure guest session exists when opening index.html directly
   useEffect(() => {
-    // Ensure initial entry goes through Landing Page (index2.html) first if unauthenticated
-    if (!sessionStorage.getItem('maternity_user') && !sessionStorage.getItem('maternity_consent_agreed')) {
-      const isLandingPage = window.location.pathname.endsWith('index2.html');
-      if (!isLandingPage) {
-        window.location.href = 'index2.html';
-      }
+    if (!sessionStorage.getItem('maternity_user')) {
+      sessionStorage.setItem('maternity_user', JSON.stringify({
+        name: 'Mama Guest',
+        isGuest: true,
+        loggedInAt: new Date().toISOString()
+      }));
     }
   }, []);
 

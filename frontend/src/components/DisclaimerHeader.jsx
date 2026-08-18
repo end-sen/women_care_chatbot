@@ -46,8 +46,8 @@ export default function DisclaimerHeader({
         {/* Left: Branding */}
         <div className="flex items-center justify-between w-full md:w-auto">
           <a
-            href="index2.html"
-            title="Go to AmaniCare Landing Page"
+            href="index.html"
+            title="AmaniCare Home"
             className="flex items-center gap-3 no-underline hover:opacity-90 transition"
           >
             <div className="w-10 h-10 rounded-2xl bg-purple-600 flex items-center justify-center text-white shadow-md shrink-0">
