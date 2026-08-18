@@ -10,7 +10,7 @@ export default function QuickReplies({ branch, trimester, gestationalStage, heal
       title: "Positive Test Guidance: Which path would you like to explore?",
       items: [
         { label: "🤰 I want to continue the pregnancy", query: "I tested positive and I want to continue the pregnancy. What are the key first steps for antenatal care, health, and vitamins?", topicTag: "continuing_pregnancy" },
-        { label: "🩺 Safe Termination Care Guidance", query: "What options exist for safe clinical termination care, WHO clinical standards, and licensed provider requirements?", topicTag: "termination" },
+        { label: "🩺 Safe Termination Care Guidance", query: "What are the exact ways and methods for pregnancy termination (medical abortion with Mifepristone & Misoprostol, Manual Vacuum Aspiration MVA, D&E), how they work, expected symptoms, and safety precautions?", topicTag: "termination" },
         { label: "⚖️ Explore all options & counseling", query: "I tested positive and I want to explore all my options (continuing, adoption, termination) and counseling resources in privacy.", topicTag: "whats_right_for_me" },
         { label: "💊 Folic Acid & Early Health Steps", query: "What prenatal vitamins (like Folic Acid) and dietary precautions should I begin immediately after a positive test?", topicTag: "nutrition" },
         { label: "🏥 Find Clinics & Health Services", isFacilityButton: true, facilityFilter: "family_planning" }
@@ -345,7 +345,7 @@ export default function QuickReplies({ branch, trimester, gestationalStage, heal
             },
             {
               label: 'Overview of Termination Care',
-              query: 'What options exist for safe clinical termination care and licensed provider requirements?',
+              query: 'What are the exact ways and methods for pregnancy termination (medical abortion with Mifepristone & Misoprostol, Manual Vacuum Aspiration MVA, D&E), how they work, expected symptoms, and safety precautions?',
               topicTag: 'termination'
             },
             {

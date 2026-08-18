@@ -85,7 +85,8 @@ NAVIGATION_PROMPTS = [
     "what general maternal health tips and guidelines should i follow?",
     "what vitamins, foods, and nutrition are recommended during pregnancy?",
     "what common symptoms require medical attention during pregnancy?",
-    "what options exist for safe clinical termination care, who clinical standards, and licensed provider requirements?"
+    "what options exist for safe clinical termination care, who clinical standards, and licensed provider requirements?",
+    "what are the exact ways and methods for pregnancy termination (medical abortion with mifepristone & misoprostol, manual vacuum aspiration mva, d&e), how they work, expected symptoms, and safety precautions?"
 ]
 
 def classify_safety_risk(message: str) -> str:
