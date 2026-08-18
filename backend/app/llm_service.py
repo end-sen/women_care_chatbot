@@ -279,12 +279,14 @@ def generate_grounded_response(
                     {"role": "system", "content": sys_msg},
                     {"role": "user", "content": user_message}
                 ],
-                model="llama-3.3-70b-versatile",
+                model="groq/compound-mini",
                 temperature=0.2,
-                max_tokens=500,
+                max_tokens=600,
                 max_retries=2
             )
-            return answer, used_sources
+            # Strip reasoning tags <think>...</think> if reasoning model output contains thought process
+            cleaned_answer = re.sub(r'<think>.*?</think>', '', answer, flags=re.DOTALL).strip()
+            return cleaned_answer, used_sources
         except Exception as e:
             print(f"[LLM Service] Groq API response generation failed: {e}. Falling back to local WHO document synthesis.")
 
