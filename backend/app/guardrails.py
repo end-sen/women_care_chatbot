@@ -127,21 +127,16 @@ def check_safety_guardrails(message: str, session_id: str = "default_session") -
                 kw_flag = ("CONCERNING", "self_admin_refusal", phrase)
                 break
 
-    # Layer 2: LLM Risk Classifier Check
-    llm_label = classify_safety_risk(message)
+    # Layer 2: LLM Intent & Distress Classifier Check
+    from app.llm_service import classify_user_intent
+    intent_info = classify_user_intent(message)
+    distress_flag = intent_info.get("distress_flag", False)
 
-    # Determine final triage result
-    # If explicit emergency keyword matched, always flag EMERGENCY.
-    # If LLM flags EMERGENCY without explicit keyword, verify presence of medical symptom context.
     is_emergency = False
     if kw_flag and kw_flag[0] == "EMERGENCY":
         is_emergency = True
-    elif llm_label == "EMERGENCY":
-        symptom_indicators = ["pain", "bleed", "headache", "fever", "cramp", "leak", "dizzy", "vomit", "sick", "baby", "movement", "fluid", "hurt", "swelling", "blood", "pressure"]
-        if any(w in msg_lower for w in symptom_indicators):
-            is_emergency = True
 
-    is_concerning = (kw_flag and kw_flag[0] == "CONCERNING") or (llm_label == "CONCERNING")
+    is_concerning = (kw_flag and kw_flag[0] == "CONCERNING") or distress_flag or (intent_info.get("topic") == "safety_coercion_concern")
 
     # 1. Handle EMERGENCY Trigger
     if is_emergency:

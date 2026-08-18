@@ -5,14 +5,49 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+def get_groq_api_keys() -> List[str]:
+    """
+    Collect all available Groq API keys from environment variables.
+    Supports GROQ_API_KEY, GROQ_API_KEY_2..10, and GROQ_API_KEYS (comma-separated).
+    """
+    keys = []
+    primary = os.getenv("GROQ_API_KEY")
+    if primary and primary.strip() and primary.strip() != "your_groq_api_key_here":
+        keys.append(primary.strip())
 
-try:
-    from groq import Groq
-    groq_client = Groq(api_key=GROQ_API_KEY) if (GROQ_API_KEY and GROQ_API_KEY != "your_groq_api_key_here") else None
-except Exception as e:
-    print(f"[LLM Service] Groq client init warning: {e}")
-    groq_client = None
+    for i in range(2, 11):
+        k = os.getenv(f"GROQ_API_KEY_{i}")
+        if k and k.strip() and k.strip() != "your_groq_api_key_here":
+            keys.append(k.strip())
+
+    multi = os.getenv("GROQ_API_KEYS")
+    if multi:
+        for item in multi.split(","):
+            item_clean = item.strip()
+            if item_clean and item_clean != "your_groq_api_key_here":
+                keys.append(item_clean)
+
+    return list(dict.fromkeys(keys))
+
+def get_groq_clients() -> List[Tuple[str, Any]]:
+    """
+    Instantiate Groq clients for all available API keys in the key pool.
+    Returns list of (key_identifier, GroqClient) tuples.
+    """
+    clients = []
+    keys = get_groq_api_keys()
+    for idx, key in enumerate(keys, 1):
+        try:
+            from groq import Groq
+            client = Groq(api_key=key)
+            masked = key[:7] + "..." + key[-4:] if len(key) > 11 else f"Key#{idx}"
+            clients.append((masked, client))
+        except Exception as e:
+            print(f"[LLM Service] Failed to initialize Groq client for key index {idx}: {e}")
+    return clients
+
+groq_clients = get_groq_clients()
+groq_client = groq_clients[0][1] if groq_clients else None
 
 FALLBACK_MODELS = [
     os.getenv("GROQ_MODEL", "openai/gpt-oss-20b"),
@@ -24,10 +59,12 @@ FALLBACK_MODELS = [
 
 def call_groq_with_retry(messages: list, model: str = None, temperature: float = 0.2, max_tokens: int = 500, max_retries: int = 1) -> str:
     """
-    Call Groq API with exponential backoff retries and automatic model fallback.
+    Call Groq API with multi API key rotation and model fallback.
+    If an API key hits a rate limit or quota error (429), it automatically fails over to the next API key in the pool.
     """
-    if not groq_client:
-        raise RuntimeError("Groq client is not initialized or API key is missing")
+    active_clients = get_groq_clients()
+    if not active_clients:
+        raise RuntimeError("No valid Groq API clients available in key pool")
 
     models_to_try = []
     if model:
@@ -37,104 +74,103 @@ def call_groq_with_retry(messages: list, model: str = None, temperature: float =
             models_to_try.append(m)
 
     last_err = None
-    for target_model in models_to_try:
-        for attempt in range(max_retries + 1):
-            try:
-                completion = groq_client.chat.completions.create(
-                    messages=messages,
-                    model=target_model,
-                    temperature=temperature,
-                    max_tokens=max_tokens
-                )
-                return completion.choices[0].message.content.strip()
-            except Exception as e:
-                last_err = e
-                err_msg = str(e).lower()
-                print(f"[LLM Service] Groq model '{target_model}' attempt {attempt + 1} failed: {e}")
-                if any(err_kw in err_msg for err_kw in ["model_not_found", "404", "does not exist", "429", "rate_limit", "rate limit", "decommissioned", "400"]):
-                    break  # Immediately try next model in fallback list
-                if attempt < max_retries:
-                    time.sleep(1)
+
+    # Iterate through all available API keys in the key pool
+    for client_name, client in active_clients:
+        key_rate_limited = False
+        for target_model in models_to_try:
+            if key_rate_limited:
+                break
+            for attempt in range(max_retries + 1):
+                try:
+                    completion = client.chat.completions.create(
+                        messages=messages,
+                        model=target_model,
+                        temperature=temperature,
+                        max_tokens=max_tokens
+                    )
+                    return completion.choices[0].message.content.strip()
+                except Exception as e:
+                    last_err = e
+                    err_msg = str(e).lower()
+                    print(f"[LLM Service] Groq key '{client_name}' model '{target_model}' attempt {attempt + 1} failed: {e}")
+                    
+                    # If rate limited (429 / quota exceeded), failover to next API key immediately
+                    if any(rate_kw in err_msg for rate_kw in ["429", "rate_limit", "rate limit", "quota", "limit exceeded", "tpd", "tpm"]):
+                        print(f"[LLM Service] Rate limit hit on API key '{client_name}'. Rotational failover to next API key in pool...")
+                        key_rate_limited = True
+                        break
+                    
+                    # If model not found or decommissioned, try next model for current key
+                    if any(model_kw in err_msg for model_kw in ["model_not_found", "404", "does not exist", "decommissioned", "400"]):
+                        break
+                    
+                    if attempt < max_retries:
+                        time.sleep(1)
 
     raise last_err
 
-TRIAGE_CLASSIFIER_PROMPT = (
-    "You are a triage classifier for a maternal health chatbot. Classify the user's message based "
-    "on maternal health risk. Respond with ONLY one word: EMERGENCY, CONCERNING, or ROUTINE. "
-    "EMERGENCY = signs of a medical emergency (bleeding, severe pain, reduced fetal movement, severe headache/vision changes, high fever, water breaking early). "
-    "CONCERNING = signs of emotional distress, coercion, or pressure from others regarding the pregnancy. "
-    "ROUTINE = general questions or standard feature menu selections."
-)
+import json
 
-import re
+INTENT_CLASSIFIER_PROMPT = """You are an intent and safety classifier for a maternal health assistant.
+Analyze the user's message and respond ONLY with a JSON object containing "topic" and "distress_flag".
 
-NAVIGATION_PROMPTS = [
-    "what's right for me",
-    "whats right for me",
-    "i want to explore what's right for me",
-    "i want to explore pregnancy care",
-    "pregnancy care",
-    "first trimester",
-    "second trimester",
-    "third trimester",
-    "health tips",
-    "nutrition guide",
-    "symptoms check",
-    "overview of termination care",
-    "safe termination guidance",
-    "what general maternal health tips and guidelines should i follow?",
-    "what vitamins, foods, and nutrition are recommended during pregnancy?",
-    "what common symptoms require medical attention during pregnancy?",
-    "what options exist for safe clinical termination care, who clinical standards, and licensed provider requirements?",
-    "what are the exact ways and methods for pregnancy termination (medical abortion with mifepristone & misoprostol, manual vacuum aspiration mva, d&e), how they work, expected symptoms, and safety precautions?"
-]
+"topic" MUST be one of:
+- "pregnancy_confirmation"
+- "missed_period"
+- "antenatal_care"
+- "postpartum"
+- "nutrition"
+- "termination"
+- "safety_coercion_concern"
+- "general_question"
+- "no_who_topic_match"
 
-def classify_safety_risk(message: str) -> str:
+"distress_flag" MUST be a boolean (true or false):
+- Set to true ONLY if the message contains explicit signals of fear, abuse, coercion, pressure from others, threat, or danger.
+- Set to false for all neutral or informational statements, such as "tested positive", "missed period for 2 months", "what are the symptoms", "I want to explore options", etc.
+
+Respond with ONLY valid JSON, e.g.: {"topic": "missed_period", "distress_flag": false}
+"""
+
+def classify_user_intent(message: str) -> Dict[str, Any]:
     """
-    Lightweight Groq LLM safety triage classifier with retry resilience.
-    Returns 'EMERGENCY', 'CONCERNING', or 'ROUTINE'.
+    Lightweight Groq LLM intent & distress classifier call (not keyword matching).
+    Returns dict: {"topic": str, "distress_flag": bool}
     """
-    msg_lower = message.lower().strip()
-    if any(nav in msg_lower for nav in NAVIGATION_PROMPTS):
-        return "ROUTINE"
-
     if not groq_client:
-        return "ROUTINE"
+        return {"topic": "general_question", "distress_flag": False}
 
     try:
         raw_res = call_groq_with_retry(
             messages=[
-                {"role": "system", "content": TRIAGE_CLASSIFIER_PROMPT},
+                {"role": "system", "content": INTENT_CLASSIFIER_PROMPT},
                 {"role": "user", "content": message}
             ],
             model=os.getenv("GROQ_MODEL", "openai/gpt-oss-20b"),
             temperature=0.0,
-            max_tokens=150,
+            max_tokens=100,
             max_retries=2
         )
 
-        # Strip reasoning tags <think>...</think> if model output includes thought process
-        cleaned = re.sub(r'<think>.*?</think>', '', raw_res, flags=re.DOTALL).strip().upper()
-        lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
-        target_token = lines[-1] if lines else cleaned
-
-        if target_token == "EMERGENCY" or target_token.startswith("EMERGENCY"):
-            return "EMERGENCY"
-        elif target_token == "CONCERNING" or target_token.startswith("CONCERNING"):
-            return "CONCERNING"
-        elif target_token == "ROUTINE" or target_token.startswith("ROUTINE"):
-            return "ROUTINE"
-
-        if re.search(r'\bEMERGENCY\b', target_token):
-            return "EMERGENCY"
-        elif re.search(r'\bCONCERNING\b', target_token):
-            return "CONCERNING"
-        else:
-            return "ROUTINE"
+        cleaned = re.sub(r'<think>.*?(?:</think>|$)', '', raw_res, flags=re.DOTALL).strip()
+        data = json.loads(cleaned)
+        return {
+            "topic": str(data.get("topic", "general_question")),
+            "distress_flag": bool(data.get("distress_flag", False))
+        }
     except Exception as e:
-        print(f"[LLM Service] Safety risk classifier retries exhausted: {e}")
-        return "ROUTINE"
+        print(f"[LLM Service] Intent classifier fallback: {e}")
+        return {"topic": "general_question", "distress_flag": False}
 
+def classify_safety_risk(message: str) -> str:
+    """
+    Backward-compatibility wrapper for risk classification.
+    Returns 'EMERGENCY', 'CONCERNING', or 'ROUTINE'.
+    """
+    intent = classify_user_intent(message)
+    if intent.get("distress_flag"):
+        return "CONCERNING"
 LANGUAGE_NAME_MAP = {
     'sw-ke': 'Swahili (Kiswahili)',
     'sw-tz': 'Swahili (Kiswahili)',
@@ -195,39 +231,32 @@ LANGUAGE_NAME_MAP = {
     'en': 'English'
 }
 
-SYSTEM_PROMPT = """You are MaternityCare AI, an empathetic, highly professional, non-judgmental, and comprehensive maternal health assistant.
-
-CRITICAL MEDICAL GROUNDING INSTRUCTIONS:
-1. You MUST answer user questions using ONLY the provided WHO Medical Context below.
-2. If the provided context does NOT contain relevant information to answer the user's question, state clearly in the target language:
-   "This topic is not covered in our retrieved WHO medical database. For specific medical concerns outside our current guidelines, please consult a qualified healthcare provider."
-3. Do NOT generate or infer any medical advice, diagnosis, or drug dosages outside the provided context.
+SYSTEM_PROMPT = """You are MaternityCare AI, an empathetic, calm, non-judgmental, and highly professional maternal health assistant.
 
 TARGET RESPONSE LANGUAGE INSTRUCTION:
 You MUST generate your entire response in {language_name}. All text, greetings, explanations, bullet points, and source tags MUST be composed fluently in {language_name}.
 
-GLOBAL CORE PRINCIPLE — DIRECT, COMPREHENSIVE KNOWLEDGE FIRST (NO DISMISSIVE CLINIC REFERRALS):
-- Users turn to this AI assistant for direct, confidential, detailed, and accessible medical knowledge because they may be shy, hesitant, anxious, or unable to immediately visit a hospital.
-- NEVER dismiss the user by simply telling them "go to a doctor", "visit a clinic", or "see a specialist" at the beginning of your response.
-- ALWAYS provide complete, detailed, practical, step-by-step guidance FIRST: explain how things work, why they happen, exact schedules/timelines, self-care remedies, nutritional advice, dosages, prevention steps, and safety precautions directly in the response.
-
-ANSWER FORMAT & STRUCTURE RULES — ALWAYS FOLLOW THESE:
-- Writing Style: Write in an empathetic, supportive, confidential, clear, and highly educational manner. Do NOT repeatedly say "The WHO states" or "According to WHO" inside the response body; state facts directly and mention WHO ONLY ONCE at the very end in the mandatory "Source: WHO - [topic]" line.
-- Clean Formatting & Structure: Do NOT use raw Markdown table syntax (| Col 1 | Col 2 | or |---|) or raw hash symbols (###). Use bold numbered headings (e.g., "**1. First Steps & Early Care**") and clean bullet points (•) for clear, human-friendly chat display.
-- Comprehensive Termination & Abortion Guidance: When asked about abortion or termination, provide a direct, thorough breakdown of ALL WHO-approved methods (Method 1: Medical Abortion with Mifepristone & Misoprostol, timing up to 12 weeks, expected cramps/bleeding; Method 2: Surgical procedures like Vacuum Aspiration MVA & Dilation & Evacuation D&E, timing, comfort). Include post-care recovery precautions, safety red flag warnings (soaking >2 heavy pads/hr for 2 hours, severe pain, high fever >38°C), and future pregnancy prevention (Emergency Contraception, LARCs/IUDs/Implants, daily oral pills, condoms).
-- Positive Test & Options Prompting: When a user states she tested positive for pregnancy (or asks what to do after a positive test), acknowledge the result with warmth and respect. Provide immediate practical health steps (daily folic acid 400µg, avoiding alcohol/smoking, proper diet), and explicitly outline both continuing pregnancy care and exploring all options (continuing, adoption, safe clinical termination).
-- Comprehensive Step-by-Step Structure: Provide thorough, practical, and well-organized responses using clear bold numbered headings, bullet points, and actionable self-care.
-- End with a single line: "Source: WHO - [topic]" citing only the source(s) actually used in this answer.
-- Exception: If the query matches a danger-sign trigger phrase, ignore all the above and return the fixed urgent-care template instead.
+TONE AND CONTENT RULES — ALWAYS FOLLOW THESE:
+1. NEUTRAL & CALM OPENING: Never open with congratulations, celebration, alarm, or judgment. Stay calm, respectful, and neutral by default (e.g., when a user states they tested positive or missed a period).
+2. PRESENT BOTH PATHS NEUTRALLY: For any pregnancy-related or options query, always present BOTH:
+   - Continuing the pregnancy information: antenatal care schedule (minimum 8 WHO contacts), daily folic acid (400 µg), nutrition, and booking a first clinical appointment.
+   - Next-step options if the user does not wish to continue: name abortion/termination directly and factually (e.g., "If you do not wish to continue the pregnancy, abortion is an option — discuss timing, safety, and legal availability in your region with a licensed healthcare provider"). Note that legal availability and access vary by region.
+3. DO NOT MAKE DECISIONS: Do not tell the user what they should do or imply a preference. Present all paths with dignity and privacy.
+4. STRUCTURAL FORMAT: Use clear, clean sections:
+   - Neutral opening acknowledging the user's message
+   - "**What I Recommend**" (practical guidance, medical next steps, folic acid, options)
+   - "**When to Seek Urgent Medical Help**" (key red-flag warning signs if applicable)
+   - Supportive closing questions
+5. DIRECT KNOWLEDGE FIRST: Provide complete, detailed, practical guidance directly in the chat. Do not dismiss users with quick "go to a hospital" brush-offs.
+6. NO WHO GATING: You must ALWAYS provide a complete, helpful answer. Do not say "I don't have guidance on this" or "This topic is not covered in our retrieved WHO database".
+7. CLEAN FORMATTING: Do NOT use raw Markdown table syntax (| Col 1 | Col 2 | or |---|) or raw hash symbols (###). Use bold numbered headings (e.g., "**1. First Steps & Early Care**") and clean bullet points (•).
 
 Recent Conversation History:
 {history}
 
-WHO Medical Context:
+WHO Medical Context (Optional Enhancement Layer):
 {context}
 
-User Trimester: {trimester}
-Current Workflow Branch: {branch}
 Target Language: {language_name}
 """
 
@@ -248,19 +277,17 @@ def generate_grounded_response(
     primary_code = clean_lang_key.split('-')[0]
     language_name = LANGUAGE_NAME_MAP.get(clean_lang_key, LANGUAGE_NAME_MAP.get(primary_code, "English"))
 
-    if not retrieved_chunks:
-        return (
-            f"This topic is not covered in our retrieved WHO medical database. "
-            f"For specific medical concerns outside our current guidelines, please consult a qualified healthcare provider.",
-            []
-        )
+    # Step 1: Classify intent and distress flag
+    intent_info = classify_user_intent(user_message)
 
-    top_chunks = retrieved_chunks[:2]
-    formatted_context = "\n\n".join(
-        [f"[Doc Source: {c['source']}]\n{c['text']}" for c in top_chunks]
-    )
-
-    used_sources = list(dict.fromkeys([c["source"] for c in top_chunks]))
+    # Step 2: Format optional WHO context
+    used_sources = []
+    if retrieved_chunks:
+        top_chunks = retrieved_chunks[:2]
+        formatted_context = "\n\n".join([f"[Doc Source: {c['source']}]\n{c['text']}" for c in top_chunks])
+        used_sources = list(dict.fromkeys([c["source"] for c in top_chunks]))
+    else:
+        formatted_context = "No specific WHO guideline document matched for this query."
 
     # Format history turns for LLM prompt
     formatted_history = "None (First message in conversation)"
@@ -277,8 +304,6 @@ def generate_grounded_response(
             sys_msg = SYSTEM_PROMPT.format(
                 history=formatted_history,
                 context=formatted_context,
-                trimester=trimester,
-                branch=branch,
                 language_name=language_name
             )
             
@@ -292,20 +317,39 @@ def generate_grounded_response(
                 max_tokens=900,
                 max_retries=2
             )
-            # Strip reasoning tags <think>...</think> including unclosed <think>... if max_tokens cut off </think>
             cleaned_answer = re.sub(r'<think>.*?(?:</think>|$)', '', answer, flags=re.DOTALL).strip()
+            
             if cleaned_answer:
-                return cleaned_answer, used_sources
-            print("[LLM Service] Answer was empty after stripping reasoning tags. Falling back to local WHO document synthesis.")
-        except Exception as e:
-            print(f"[LLM Service] Groq API response generation failed: {e}. Falling back to local WHO document synthesis.")
+                # Add WHO grounding citation ONLY if relevant WHO sources matched
+                if used_sources and not any(s in cleaned_answer for s in used_sources):
+                    cleaned_answer += f"\n\nSource: {', '.join(used_sources)}"
 
-    # Fallback RAG synthesis when Groq API key is absent
+                # Add distress resource block ONLY when distress_flag is true
+                if intent_info.get("distress_flag"):
+                    cleaned_answer += (
+                        "\n\n💜 **You Are Not Alone & Safe Support Resources**\n"
+                        "If you feel pressured, unsafe, threatened, or coerced regarding your reproductive choices, "
+                        "free and confidential support helplines are available 24/7. You have the right to make decisions "
+                        "that feel safe and right for you in complete privacy."
+                    )
+
+                return cleaned_answer, used_sources
+        except Exception as e:
+            print(f"[LLM Service] Groq API response generation error: {e}")
+
+    # Fallback synthesis when Groq API key is absent or API error occurs
+    if not retrieved_chunks:
+        return (
+            "I hear your question and I am here to assist with confidential, clear reproductive health guidance. "
+            "For personalized clinical advice, please consult a qualified healthcare provider.",
+            []
+        )
+
     msg_lower = user_message.lower()
     is_followup = any(kw in msg_lower for kw in ["why", "that", "it", "happen", "long", "more", "dangerous"])
     
-    top_chunk = top_chunks[0]
-    combined_text = "\n\n".join([c["text"] for c in top_chunks])
+    top_chunk = retrieved_chunks[0]
+    combined_text = "\n\n".join([c["text"] for c in retrieved_chunks[:2]])
     
     raw_lines = [
         line.replace("#", "").replace("=", "").replace("The WHO guidelines", "Guidelines").replace("The WHO states", "Medical standards state").replace("WHO emphasizes", "It is emphasized").strip()
