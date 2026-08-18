@@ -237,7 +237,9 @@ export default function App() {
     let detectedTopic = topicTag;
     if (!detectedTopic) {
       const lower = userText.toLowerCase();
-      if (lower.includes('prevention') || lower.includes('contracept') || lower.includes('condom') || lower.includes('iud') || lower.includes('pill') || lower.includes('larc')) {
+      if (lower.includes('positive') || lower.includes('tested positive') || lower.includes('test is positive') || lower.includes('missed period') || lower.includes('pregnant')) {
+        detectedTopic = 'positive_test';
+      } else if (lower.includes('prevention') || lower.includes('contracept') || lower.includes('condom') || lower.includes('iud') || lower.includes('pill') || lower.includes('larc')) {
         detectedTopic = 'prevention';
       } else if (lower.includes('termination') || lower.includes('abortion')) {
         detectedTopic = 'termination';
